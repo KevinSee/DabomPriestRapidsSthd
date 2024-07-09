@@ -17,10 +17,12 @@ library(here)
 
 #-----------------------------------------------------------------
 # uses a complete tag history of marks/recaptures at PRD or PRDLD1
-sthd_tags <- read_csv(here("analysis/data/raw_data",
-                           "tagging_recapture",
-                           "PriestRapids_Mark_Recapture_2011_2024.csv"),
-                      show_col_types = F) |>
+sthd_tags <-
+  read_csv(here("analysis/data/raw_data",
+                "tagging_recapture",
+                "PriestRapids_Mark_Recapture_2011_2024.csv"),
+                # "PriestRapids_Sthd_SY2011_present.csv"),
+           show_col_types = F) |>
   clean_names() |>
   mutate(across(contains("_date_mm"),
                 mdy),
@@ -43,7 +45,7 @@ sthd_tags <- read_csv(here("analysis/data/raw_data",
 # remove tags that are spawning in a future year
 sthd_tags <-
   sthd_tags |>
-  filter(spawn_year < year(today()))
+  filter(spawn_year <= year(today()))
 
 # pull out MRR data about all PIT tags from those MRR files
 all_tags <-
@@ -340,7 +342,7 @@ sthd_tags |>
          species_run_rear_type,
          everything()) |>
   as.data.frame()
-# only one left is a rainbow trout
+# only one left is a rainbow trout (SRR == 30W)
 
 
 #-----------------------------------------------------------------

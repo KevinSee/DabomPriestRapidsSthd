@@ -7,7 +7,6 @@
 #-----------------------------------------------------------------
 # load needed libraries
 library(tidyverse)
-# library(UCSthdReddObsErr)
 library(PITcleanr)
 library(janitor)
 library(readxl)
@@ -71,7 +70,6 @@ spwn_est <- crossing(population = c("Wenatchee",
   select(run_year, spawn_year, population) %>%
   filter(!(population == "Methow" &
              spawn_year < 2021)) %>%
-  filter(spawn_year == max_yr) |>
   mutate(results_list = map2(spawn_year,
                              population,
                              .f = possibly(function(yr, pop) {
@@ -352,7 +350,8 @@ spwn_est <- crossing(population = c("Wenatchee",
 
                                  spwn_yr <-
                                    spwn_yr |>
-                                   left_join(trib_NAs) |>
+                                   left_join(trib_NAs,
+                                             by = join_by(river)) |>
                                    mutate(across(c(na_hos, na_nos),
                                                  ~ replace_na(., FALSE))) |>
                                    rowwise() |>
@@ -402,13 +401,105 @@ spwn_est <- crossing(population = c("Wenatchee",
                                                  after = Inf)) %>%
                                    arrange(river)
 
+                                 # get female spawners by origin in Wenatchee
+                                 if(pop == "Wenatchee") {
+
+                                   # get pHOS of females to apply to redd estimates
+                                   phos_female <-
+                                     wen_tags |>
+                                     filter(sex == "Female") |>
+                                     count(location, origin, sex) |>
+                                     group_by(location) |>
+                                     mutate(phos_f = n / sum(n),
+                                            phos_f_se = sqrt((phos_f * (1 - phos_f)) / sum(n))) |>
+                                     ungroup() |>
+                                     mutate(across(origin,
+                                                   ~ case_match(.,
+                                                                "H" ~ "Hatchery",
+                                                                "W" ~ "Natural",
+                                                                .default = .)))
+
+                                   fem_spwn <-
+                                     # female estimates in tributaries based on PIT tags
+                                     trib_spawners |>
+                                     mutate(across(location,
+                                                   ~ case_when(. %in% unique(wen_tags$location) ~ .,
+                                                               .default = "Other Tributaries"))) |>
+                                     group_by(spawn_year,
+                                              origin,
+                                              location) |>
+                                     summarise(across(spawners,
+                                                      sum),
+                                               across(spawners_se,
+                                                      ~ sqrt(sum(.^2))),
+                                               .groups = "drop") |>
+                                     left_join(wen_tags |>
+                                                 count(location, origin, sex) |>
+                                                 group_by(location) |>
+                                                 mutate(prop = n / sum(n),
+                                                        prop_se = sqrt((prop * (1 - prop)) / sum(n))) |>
+                                                 ungroup() |>
+                                                 mutate(across(origin,
+                                                               ~ case_match(.,
+                                                                            "H" ~ "Hatchery",
+                                                                            "W" ~ "Natural",
+                                                                            .default = .))) |>
+                                                 filter(str_detect(location, "Tumwater", negate = T)) |>
+                                                 filter(sex == "Female"),
+                                               by = join_by(origin, location)) |>
+                                     rowwise() |>
+                                     mutate(female_spawners = spawners * prop,
+                                            female_spawners_se = msm::deltamethod(~ x1 * x2,
+                                                                                  c(spawners,
+                                                                                    prop),
+                                                                                  diag(c(spawners_se,
+                                                                                         prop_se)^2))) |>
+                                     ungroup() |>
+                                     mutate(source = "DABOM") |>
+                                     # redd survey estimates of females
+                                     bind_rows(
+                                       redd_spwn_yr |>
+                                         mutate(location = river) |>
+                                         mutate(across(location,
+                                                       ~ case_when(reach %in% paste0("W", 8:10) ~ "Above Tumwater",
+                                                                   reach %in% paste0("W", 1:7) ~ "Below Tumwater",
+                                                                   .default = .))) |>
+                                         group_by(location) |>
+                                         summarize(across(redd_est,
+                                                          sum),
+                                                   across(redd_se,
+                                                          ~ sqrt(sum(.^2)))) |>
+                                         left_join(phos_female,
+                                                   by = join_by(location)) |>
+                                         rowwise() |>
+                                         mutate(female_spawners = redd_est * phos_f,
+                                                female_spawners_se = msm::deltamethod(~ x1 * x2,
+                                                                                      c(redd_est,
+                                                                                        phos_f),
+                                                                                      diag(c(redd_se,
+                                                                                             phos_f_se)^2))) |>
+                                         ungroup() |>
+                                         mutate(source = "Redds")) |>
+                                     select(location,
+                                            source,
+                                            origin,
+                                            starts_with("female")) |>
+                                     arrange(location,
+                                             source,
+                                             origin)
+
+
+                                 } else {
+                                   fem_spwn = NULL
+                                 }
 
                                  list(results_lst = results_lst,
                                       fpr = fpr_df,
                                       redd_results = redd_results,
                                       spwn_rch = spwn_rch,
                                       redd_spwn_yr = redd_spwn_yr,
-                                      spwn_yr = spwn_yr) %>%
+                                      spwn_yr = spwn_yr,
+                                      fem_spwn = fem_spwn) %>%
                                    return()
 
                                } else {
@@ -446,13 +537,13 @@ spwn_est <- crossing(population = c("Wenatchee",
 
                                  spwn_yr <- escp_est %>%
                                    filter(str_detect(location, "_all$")) |>
-                                   mutate(subbasin = if_else(str_detect(location,
-                                                                        "Met"),
-                                                             "Methow",
-                                                             if_else(str_detect(location,
-                                                                                "Wen"),
-                                                                     "Wenatchee",
-                                                                     NA_character_))) %>%
+                                   mutate(subbasin = case_when(str_detect(location, "Met") ~
+                                                                 "Methow",
+                                                               str_detect(location, "Wen") ~
+                                                                 "Wenatchee",
+                                                               str_detect(location, "Tumwater") ~
+                                                                 "Wenatchee",
+                                                               .default = NA_character_)) |>
                                    relocate(subbasin, .before = 1) %>%
                                    left_join(rem_df %>%
                                                group_by(origin) %>%
@@ -461,8 +552,7 @@ spwn_est <- crossing(population = c("Wenatchee",
                                                          .groups = "drop"),
                                              by = "origin") %>%
                                    mutate(across(removed,
-                                                 replace_na,
-                                                 0)) |>
+                                                 ~ replace_na(., 0))) |>
                                    rowwise() %>%
                                    mutate(
                                      across(
@@ -564,7 +654,8 @@ spwn_est <- crossing(population = c("Wenatchee",
 
                                  spwn_yr <-
                                    spwn_yr |>
-                                   left_join(trib_NAs) |>
+                                   left_join(trib_NAs,
+                                             by = join_by(river)) |>
                                    mutate(across(c(na_hos, na_nos),
                                                  ~ replace_na(., FALSE))) |>
                                    rowwise() |>
@@ -612,18 +703,111 @@ spwn_est <- crossing(population = c("Wenatchee",
                                                  after = Inf)) %>%
                                    arrange(river)
 
+
+                                 fem_spwn <-
+                                   # female estimates in tributaries based on PIT tags
+                                   trib_spawners |>
+                                   mutate(across(location,
+                                                 ~ case_when(. %in% unique(wen_tags$location) ~ .,
+                                                             .default = "Other Tributaries"))) |>
+                                   group_by(origin,
+                                            location) |>
+                                   summarise(across(spawners,
+                                                    sum),
+                                             across(spawners_se,
+                                                    ~ sqrt(sum(.^2))),
+                                             .groups = "drop") |>
+                                   left_join(wen_tags |>
+                                               count(location, origin, sex) |>
+                                               right_join(expand(wen_tags,
+                                                                 location,
+                                                                 origin,
+                                                                 sex),
+                                                          by = join_by(location, origin, sex)) |>
+                                               mutate(across(n,
+                                                             ~ replace_na(., 0))) |>
+                                               group_by(location) |>
+                                               mutate(prop = n / sum(n),
+                                                      prop_se = sqrt((prop * (1 - prop)) / sum(n))) |>
+                                               ungroup() |>
+                                               mutate(across(origin,
+                                                             ~ case_match(.,
+                                                                          "H" ~ "Hatchery",
+                                                                          "W" ~ "Natural",
+                                                                          .default = .))) |>
+                                               filter(str_detect(location, "Tumwater", negate = T)) |>
+                                               filter(sex == "Female"),
+                                             by = join_by(origin, location)) |>
+                                   rowwise() |>
+                                   mutate(female_spawners = spawners * prop,
+                                          female_spawners_se = msm::deltamethod(~ x1 * x2,
+                                                                                c(spawners,
+                                                                                  prop),
+                                                                                diag(c(spawners_se,
+                                                                                       prop_se)^2))) |>
+                                   ungroup() |>
+                                   mutate(source = "DABOM") |>
+                                   arrange(origin,
+                                           location) |>
+                                   # female estimates in mainstem areas
+                                   bind_rows(
+                                     spwn_yr |>
+                                       filter(str_detect(river, "mainstem")) |>
+                                       select(location = river,
+                                              nos_est,
+                                              nos_se,
+                                              hos_est,
+                                              hos_se) |>
+                                       pivot_longer(-location) |>
+                                       mutate(est_type = case_when(str_detect(name, "_est") ~ "spawners",
+                                                                   str_detect(name, "_se") ~ "spawners_se",
+                                                                   .default = NA_character_),
+                                              origin = case_when(str_detect(name, "nos") ~ "Natural",
+                                                                 str_detect(name, "hos") ~ "Hatchery",
+                                                                 .default = NA_character_)) |>
+                                       select(-name) |>
+                                       pivot_wider(names_from = est_type,
+                                                   values_from = value) |>
+                                       left_join(wen_tags |>
+                                                   filter(str_detect(location, "Tumwater")) |>
+                                                   mutate(location = "Wenatchee (mainstem)") |>
+                                                   count(location, origin, sex) |>
+                                                   group_by(location) |>
+                                                   mutate(prop = n / sum(n),
+                                                          prop_se = sqrt((prop * (1 - prop)) / sum(n))) |>
+                                                   ungroup() |>
+                                                   mutate(across(origin,
+                                                                 ~ case_match(.,
+                                                                              "H" ~ "Hatchery",
+                                                                              "W" ~ "Natural",
+                                                                              .default = .))) |>
+                                                   filter(sex == "Female"),
+                                                 by = join_by(origin, location)) |>
+                                       rowwise() |>
+                                       mutate(female_spawners = spawners * prop,
+                                              female_spawners_se = msm::deltamethod(~ x1 * x2,
+                                                                                    c(spawners,
+                                                                                      prop),
+                                                                                    diag(c(spawners_se,
+                                                                                           prop_se)^2))) |>
+                                       ungroup() |>
+                                       mutate(source = "DABOM and RT")
+                                   )
+
                                  list(results_lst = NA,
                                       fpr = fpr_df,
                                       redd_results = NA,
                                       spwn_rch = NA,
                                       redd_spwn_yr = NA,
-                                      spwn_yr = spwn_yr) %>%
+                                      spwn_yr = spwn_yr,
+                                      fem_spwn = fem_spwn) %>%
                                    return()
                                }
                              },
                              otherwise = NULL)))
 
-redd_spwn <- spwn_est %>%
+redd_spwn <-
+  spwn_est %>%
   mutate(redd_spwn_yr = map(results_list,
                             function(x) x[["redd_spwn_yr"]])) %>%
   select(-results_list) %>%
@@ -631,7 +815,8 @@ redd_spwn <- spwn_est %>%
   filter(!is.na(observed_redds)) %>%
   makeTableNms()
 
-spwn_df <- spwn_est %>%
+spwn_df <-
+  spwn_est %>%
   mutate(spwn_yr = map(results_list,
                        function(x) x[["spwn_yr"]])) %>%
   select(-results_list) %>%
@@ -645,6 +830,31 @@ spwn_df <- spwn_est %>%
           river) |>
   makeTableNms()
 
+# for female spawners in the Wenatchee, by origin
+wen_fem <-
+  spwn_est |>
+  filter(population == "Wenatchee") |>
+  mutate(fem_spwn = map(results_list,
+                       function(x) {
+                         x |>
+                           extract2("fem_spwn")
+                       })) %>%
+  select(-results_list) %>%
+  unnest(fem_spwn) |>
+  group_by(run_year,
+           spawn_year,
+           population,
+           origin) |>
+  summarize(across(female_spawners,
+                   ~ sum(., na.rm = T)),
+            across(female_spawners_se,
+                   ~ sqrt(sum(.^2, na.rm = T))),
+            .groups = "drop") |>
+  arrange(spawn_year,
+          desc(origin)) |>
+  makeTableNms()
+
+
 #-----------------------------------------------------------------
 # generate tables based on DABOM output
 dabom_df <-
@@ -654,10 +864,10 @@ dabom_df <-
   mutate(dam_cnt_name = if_else(spawn_year %in% c(2011:2015, 2018),
                                 "PriestRapids",
                                 "RockIsland"))
-# focus only on max year
-dabom_df <-
-  dabom_df |>
-  filter(spawn_year == max_yr)
+# # focus only on max year
+# dabom_df <-
+#   dabom_df |>
+#   filter(spawn_year == max_yr)
 
 # get all the tag summaries
 all_tags <-
@@ -798,7 +1008,8 @@ escape_post <-
                        sroem::query_dabom_results(dabom_dam_nm = dam_nm,
                                                   query_year = yr,
                                                   result_type = "escape_post")
-                     }))
+                     },
+                     .progress = T))
 pop_escp <-
   escape_post |>
   mutate(pop_est = map(post,
@@ -809,26 +1020,28 @@ pop_escp <-
                                                'LMR',
                                                'OKL', 'FST',
                                                'ICH', 'JD1', 'JDA', 'PRH', 'PRO', 'PRV', 'RSH', 'TMF')) %>%
-                           mutate(param = recode(param,
-                                                 'LWE' = 'Wenatchee',
-                                                 'ENL' = 'Entiat',
-                                                 'LMR' = 'Methow',
-                                                 'OKL' = 'Okanogan',
-                                                 'FST' = 'Okanogan',
-                                                 'ICH' = 'Below Priest',
-                                                 'JD1' = 'Below Priest',
-                                                 'JDA' = 'Below Priest',
-                                                 'PRH' = 'Below Priest',
-                                                 'PRO' = 'Below Priest',
-                                                 'PRV' = 'Below Priest',
-                                                 'RSH' = 'Below Priest',
-                                                 'TMF' = 'Below Priest')) %>%
-                           mutate(param = factor(param,
-                                                 levels = c("Wenatchee",
-                                                            "Entiat",
-                                                            "Methow",
-                                                            "Okanogan",
-                                                            "Below Priest"))) %>%
+                           mutate(across(param,
+                                         ~ case_match(.,
+                                                      'LWE' ~ 'Wenatchee',
+                                                      'ENL' ~ 'Entiat',
+                                                      'LMR' ~ 'Methow',
+                                                      'OKL' ~ 'Okanogan',
+                                                      'FST' ~ 'Okanogan',
+                                                      'ICH' ~ 'Below Priest',
+                                                      'JD1' ~ 'Below Priest',
+                                                      'JDA' ~ 'Below Priest',
+                                                      'PRH' ~ 'Below Priest',
+                                                      'PRO' ~ 'Below Priest',
+                                                      'PRV' ~ 'Below Priest',
+                                                      'RSH' ~ 'Below Priest',
+                                                      'TMF' ~ 'Below Priest')),
+                                  across(param,
+                                         ~ factor(.,
+                                                  levels = c("Wenatchee",
+                                                             "Entiat",
+                                                             "Methow",
+                                                             "Okanogan",
+                                                             "Below Priest")))) |>
                            group_by(chain, iter, origin, param) %>%
                            summarize(across(abund,
                                             sum),
@@ -864,7 +1077,8 @@ pop_escp <-
                                   starts_with("nos"),
                                   starts_with("hos"),
                                   starts_with("phos"))
-                       })) |>
+                       },
+                       .progress = T)) |>
   select(-dam_cnt_name,
          -post) |>
   unnest(pop_est) |>
@@ -881,7 +1095,8 @@ all_escp <-
                                                       query_year = yr,
                                                       result_type = "escape_summ") |>
                              select(-spawn_year)
-                         })) |>
+                         },
+                         .progress = T)) |>
   select(-dam_cnt_name) |>
   unnest(esp_summ) |>
   mutate(across(origin,
@@ -932,33 +1147,24 @@ all_escp <-
   relocate(n_tags,
            .before = estimate) |>
   # make some 0s into NAs
+  group_by(run_year,
+           spawn_year,
+           location) |>
+  mutate(n_tot_tags = sum(n_tags)) |>
+  ungroup() |>
   mutate(
     across(
       c(estimate:upper_ci),
-      ~ if_else(n_tags == 0 & estimate == 0, NA_real_, .)
+      ~ if_else(n_tot_tags == 0 & estimate == 0, NA_real_, .)
     )
   ) |>
+  select(-n_tot_tags) |>
   makeTableNms()
 
 # tag summaries
-# # for bio data from WDFW
-# tag_df <- all_tags |>
-#   select(-dam_cnt_name) |>
-#   unnest(tag_summ) |>
-#   select(run_year:tag_code,
-#          species,
-#          record_id,
-#          tag_other,
-#          sex:age,
-#          ad_clip,
-#          cwt,
-#          trap_date,
-#          spawn_node:tag_detects,
-#          path) |>
-#   makeTableNms()
-
-# for bio data from PTAGIS
-tag_df <- all_tags |>
+# using bio data from PTAGIS
+tag_df <-
+  all_tags |>
   select(-dam_cnt_name) |>
   unnest(tag_summ) |>
   select(run_year:tag_code,
@@ -976,6 +1182,11 @@ tag_df <- all_tags |>
   mutate(origin = str_extract(species_run_rear_type, "[:alpha:]$")) |>
   relocate(origin,
            .after = species_run_rear_type) |>
+  mutate(population = case_when(str_detect(path, "LWE") ~ "Wenatchee",
+                                str_detect(path, "ENL") ~ "Entiat",
+                                str_detect(path, "LMR") ~ "Methow",
+                                str_detect(path, "OKL") ~ "Okanogan",
+                                .default = NA_character_)) |>
   makeTableNms()
 
 # detection probabilities
@@ -994,16 +1205,6 @@ detect_df <-
             mode)) |>
   rename(estimate = median,
          se = sd) |>
-  # mutate(
-  #   across(
-  #     node,
-  #     ~ str_replace(., "B0$", "_D")),
-  #   across(
-  #     node,
-  #     ~ if_else(nchar(.) > 3,
-  #               str_replace(., "A0$", "_U"),
-  #               .))
-  # ) |>
   makeTableNms()
 
 sexed_tags <-
@@ -1274,21 +1475,17 @@ parent_child <-
 
 # determine which group/population each site is in
 site_pop_df = buildNodeOrder(parent_child) |>
-  mutate(group = if_else(node == "PRA",
-                         "Start",
-                         if_else(str_detect(path, 'LWE'), #| node %in% c("CLK"),
-                                 "Wenatchee",
-                                 if_else(str_detect(path, "ENL"),
-                                         "Entiat",
-                                         if_else(str_detect(path, "LMR"),
-                                                 "Methow",
-                                                 if_else(str_detect(path, "OKL") | node %in% c("FST"),
-                                                         "Okanogan",
-                                                         if_else(str_detect(path, "RIA", negate = T) & str_length(path > 3),
-                                                                 "BelowPriest",
-                                                                 if_else(node == "WEA",
-                                                                         "WellsPool",
-                                                                         "Other")))))))) |>
+  mutate(group = case_when(node == "PRA" ~ "Start",
+                           str_detect(path, 'LWE') |
+                             node %in% c("CLK") ~ "Wenatchee",
+                           str_detect(path, "ENL") ~ "Entiat",
+                           str_detect(path, "LMR") ~ "Methow",
+                           str_detect(path, "OKL") |
+                             node %in% c("FST") ~ "Okanogan",
+                           str_detect(path, "RIA", negate = T) &
+                             str_detect(path, " ") ~ "BelowPriest",
+                           node == "WEA" ~ "WellsPool",
+                           .default = "Other")) |>
   mutate(group = factor(group,
                         levels = c("Wenatchee",
                                    "Entiat",
@@ -1398,7 +1595,8 @@ prop_samps = mark_grp_prop |>
                         mutate(prop = n_tags / sum(n_tags)) |>
                         arrange(iter, mark_grp) |>
                         ungroup()
-                    })) |>
+                    },
+                    .progress = T)) |>
   select(-data) |>
   unnest(samp) |>
   mutate(ad_clip = if_else(str_detect(mark_grp, "^AD"), T, F),
@@ -1490,7 +1688,8 @@ mark_grp_df <-
          lowerCI,
          upperCI)
 
-mark_grp_pop_df <- mark_grp_df |>
+mark_grp_pop_df <-
+  mark_grp_df |>
   filter(site_code %in% c("LWE",
                           "ENL",
                           "LMR",
@@ -1527,12 +1726,13 @@ read_excel(paste0("T:/DFW-Team FP Upper Columbia Escapement - General/",
   distinct() |>
   filter(tag_code %in% tag_code[duplicated(tag_code)]) |>
   arrange(tag_code) #|>
-inner_join(tag_df |>
-             clean_names() |>
-             select(tag_code))
+# inner_join(tag_df |>
+#              clean_names() |>
+#              select(tag_code))
 
 # estimate error rate for each sex
-sex_err_rate <- tag_df |>
+sex_err_rate <-
+  tag_df |>
   clean_names() |>
   select(spawn_year,
          tag_code,
@@ -1753,7 +1953,8 @@ priest_df <-
                                  ) |>
                           mutate(total = sum(priest_cnt),
                                  total_se = sqrt(sum(priest_cnt_se^2)))
-                      })) |>
+                      },
+                      .progress = T)) |>
   unnest(prd_df) |>
   left_join(tag_df |>
               clean_names() |>
@@ -1796,7 +1997,8 @@ rock_isl_df <-
                           ) |>
                           mutate(total = sum(priest_cnt),
                                  total_se = sqrt(sum(priest_cnt_se^2)))
-                      })) |>
+                      },
+                      .progress = T)) |>
   unnest(prd_df) |>
   # left_join(tag_df |>
   #             clean_names() |>
@@ -1937,6 +2139,15 @@ save_list <- list(
                   round,
                   digits = 3)),
 
+  "Wenatchee Female Spwn" = wen_fem |>
+    mutate(across(ends_with("Year"),
+                  as.integer),
+           across(ends_with("Spawners"),
+                  ~ as.integer(round_half_up(.)))) |>
+    mutate(across(where(is.double),
+                  round,
+                  digits = 3)),
+
   "SaltAge at Maturity" = sw_age_prop |>
     mutate(across(ends_with("Year"),
                   as.integer)) |>
@@ -2001,7 +2212,7 @@ save_list <- list(
 write_xlsx(x = save_list,
            path = paste0("T:/DFW-Team FP Upper Columbia Escapement - General/",
                          "UC_Sthd/Estimates/",
-                         "UC_STHD_Model_Output_v2.xlsx"))
+                         "UC_STHD_Model_Output.xlsx"))
 
 #--------------------------------------------------------------
 # read in previous estimates, add latest year to them

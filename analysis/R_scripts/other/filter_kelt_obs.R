@@ -27,14 +27,12 @@ load(here('analysis/data/derived_data/PITcleanr',
 # use auto_keep_obs for the moment
 tag_summ = summarizeTagData(prepped_ch %>%
                               mutate(user_keep_obs = auto_keep_obs),
-                            bio_df %>%
-                              group_by(tag_code) %>%
-                              slice(1) %>%
-                              ungroup())
+                            bio_df |>
+                              rename(tag_code = pit_tag))
 
 # find all tags with a spawning node of JDA
 jda_tags = tag_summ %>%
-  filter(spawn_node == "JDA") %>%
+  filter(final_node == "JDA") %>%
   select(tag_code)
 
 jda_tags %>%

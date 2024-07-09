@@ -19,7 +19,7 @@ theme_set(theme_bw())
 
 #-----------------------------------------------------------------
 # what years to examine?
-all_yrs = 2011:2021
+all_yrs = 2011:2023
 
 # set species
 spp = "Steelhead"
@@ -189,7 +189,7 @@ for(yr in all_yrs) {
   # add origin to prepped capture histories
   pit_obs = prepped_ch %>%
     left_join(bio_df %>%
-                select(tag_code,
+                select(tag_code = pit_tag,
                        origin)) %>%
     select(tag_code, origin,
            everything())

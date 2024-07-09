@@ -82,22 +82,18 @@ for(yr in 2011:2023) {
 
   # look at which branch each tag was assigned to for spawning
   brnch_df = buildNodeOrder(addParentChildNodes(parent_child, configuration)) %>%
-    mutate(group = if_else(node == "PRA",
-                           "Start",
-                           if_else(str_detect(path, 'LWE') | node %in% c("CLK"),
-                                   "Wenatchee",
-                                   if_else(str_detect(path, "ENL"),
-                                           "Entiat",
-                                           if_else(str_detect(path, "LMR"),
-                                                   "Methow",
-                                                   if_else(str_detect(path, "OKL") | node %in% c("FST"),
-                                                           "Okanogan",
-                                                           if_else(str_detect(path, "RIA", negate = T) &
-                                                                     str_detect(path, " "),
-                                                                   "BelowPriest",
-                                                                   if_else(node == "WEA",
-                                                                           "WellsPool",
-                                                                           "Other")))))))) %>%
+    mutate(group = case_when(node == "PRA" ~ "Start",
+                             str_detect(path, 'LWE') |
+                               node %in% c("CLK") ~ "Wenatchee",
+                             str_detect(path, "ENL") ~ "Entiat",
+                             str_detect(path, "LMR") ~ "Methow",
+                             str_detect(path, "OKL") |
+                               node %in% c("FST") ~ "Okanogan",
+                             str_detect(path, "RIA", negate = T) &
+                               str_detect(path, " ") ~ "BelowPriest",
+                             node == "WEA" ~ "WellsPool",
+                             .default = "Other"
+                             )) |>
     mutate(group = factor(group,
                           levels = c("Wenatchee",
                                      "Entiat",
@@ -202,13 +198,13 @@ for(yr in 2011:2023) {
   #----------------------------------------------------------------
   # better way to use upstream dam counts
   # add origin to prepped capture histories
-  pit_obs = prepped_ch %>%
-    left_join(bio_df %>%
-                select(tag_code,
-                       origin) |>
-                distinct()) %>%
-    select(tag_code, origin,
-           everything())
+  # pit_obs = prepped_ch %>%
+  #   left_join(bio_df %>%
+  #               select(tag_code,
+  #                      origin) |>
+  #               distinct()) %>%
+  #   select(tag_code, origin,
+  #          everything())
 
   # get the total dam counts from various dams
   dam_escp_df = tibble(year = yr,
@@ -294,17 +290,17 @@ for(yr in 2011:2023) {
     mutate(n_obs = map2_int(pit_code,
                             origin,
                             .f = function(x, y) {
-                              pit_obs %>%
+                              tag_summ %>%
                                 filter(origin == y) %>%
-                                summarize(n_obs = n_distinct(tag_code[node == x])) %>%
+                                summarize(n_obs = sum(str_detect(tag_detects, x))) %>%
                                 pull(n_obs)
                             })) %>%
     mutate(n_upstrm = map2_int(pit_code,
                                origin,
                                .f = function(x, y) {
-                                 pit_obs %>%
+                                 tag_summ %>%
                                    filter(origin == y) %>%
-                                   summarize(n_path = n_distinct(tag_code[str_detect(path, paste0(" ", x))])) %>%
+                                   summarize(n_path = sum(str_detect(path, paste0(" ", x)))) %>%
                                    pull(n_path)
                                }),
            n_upstrm = if_else(dam == "PriestRapids",
@@ -441,7 +437,7 @@ for(yr in 2011:2023) {
             dam_cnt_name,
             paste0("UC_Sthd_DABOM_", yr, ".rda")))
 
-  bio_summ = tag_summ %>%
+  bio_summ = pit_obs %>%
     group_by(group,
              origin,
              sex,
@@ -450,7 +446,7 @@ for(yr in 2011:2023) {
               mean_FL = mean(fork_length, na.rm = T),
               sd_FL = sd(fork_length, na.rm = T),
               .groups = "drop") %>%
-    full_join(expand(tag_summ,
+    full_join(expand(pit_obs,
                      group,
                      origin,
                      nesting(sex, age))) %>%
@@ -529,12 +525,12 @@ for(yr in 2011:2023) {
     # filter(group != "WellsPool") %>%
     select(species, spawn_year, group,
            origin, escape = mean, escp_se = sd) %>%
-    left_join(tag_summ %>%
+    left_join(pit_obs %>%
                 group_by(group, origin, sex) %>%
                 summarise(n_tags = n_distinct(tag_code[!is.na(sex)]),
                           .groups = "drop") %>%
                 filter(!is.na(sex)) %>%
-                full_join(expand(tag_summ,
+                full_join(expand(pit_obs,
                                  group,
                                  origin, sex)) %>%
                 mutate(across(n_tags,
@@ -562,7 +558,7 @@ for(yr in 2011:2023) {
     summarize(escape = sum(mean),
               escp_se = sqrt(sum(sd^2)),
               .groups = "drop") %>%
-    left_join(tag_summ %>%
+    left_join(pit_obs %>%
                 group_by(group, sex) %>%
                 summarise(n_tags = n_distinct(tag_code[!is.na(sex)]),
                           .groups = "drop") %>%

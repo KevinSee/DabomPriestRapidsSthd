@@ -24,7 +24,7 @@ load(here('analysis/data/derived_data/site_config.rda'))
 # set year
 yr = 2023
 
-for(yr in 2011:2022) {
+for(yr in 2011:2023) {
   cat(paste("Working on", yr, "\n\n"))
 
   # # load and filter biological data

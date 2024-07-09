@@ -6,7 +6,7 @@ model {
 	 ICH_U_p ~ dbeta(1, 1);
 	 JD1_D_p <- 0; # no detections / not in operation
 	 JD1_U_p <- 0; # no detections / not in operation
-	 JDA_p <- 1; # Single array, no upstream detections
+	 JDA_p <- 0; # no detections / not in operation
 	 PRH_p <- 0; # no detections / not in operation
 	 PRO_D_p ~ dbeta(1, 1);
 	 PRO_U_p ~ dbeta(1, 1);
