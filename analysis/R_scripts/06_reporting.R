@@ -879,7 +879,8 @@ all_tags <-
                                                       query_year = yr,
                                                       result_type = "tag_summ") |>
                              select(-any_of("spawn_year"))
-                         }))
+                         },
+                         .progress = T))
 
 # age proportions
 age_prop <-
@@ -1968,9 +1969,10 @@ priest_df <-
               mutate(total_tags = sum(n_tags)) |>
               ungroup()) |>
   mutate(across(origin,
-                recode,
-                "H" = "Hatchery",
-                "W" = "Natural")) |>
+                ~ case_match(.,
+                             "H" ~ "Hatchery",
+                             "W" ~ "Natural",
+                             .default = .))) |>
   makeTableNms() |>
   rename(`PRD Ladder Count` = `Win Cnt`,
          `Adult Reascension Adjustment Rate` = `Reasc Rate`,
@@ -2011,11 +2013,12 @@ rock_isl_df <-
   #                      spawn_year) |>
   #             mutate(total_tags = sum(n_tags)) |>
   #             ungroup()) |>
-  mutate(across(origin,
-                ~ recode(.,
-                "H" = "Hatchery",
-                "W" = "Natural")),
-         across(dam,
+mutate(across(origin,
+              ~ case_match(.,
+                           "H" ~ "Hatchery",
+                           "W" ~ "Natural",
+                           .default = .)),
+       across(dam,
                 ~ recode(.,
                          "RockIsland" = "Rock Island"))) |>
   makeTableNms() |>
