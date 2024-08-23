@@ -317,9 +317,12 @@ sum(bio_df$second_pit_tag %in% bio_df$pit_tag)
 
 
 bio_df |>
-  tabyl(spawn_year, ad_clip)
+  tabyl(spawn_year, ad_clip) |>
+  adorn_totals(where = "col")
+
 bio_df |>
-  tabyl(spawn_year, cwt)
+  tabyl(spawn_year, cwt) |>
+  adorn_totals(where = "col")
 
 tabyl(bio_df,
       spawn_year,
@@ -557,6 +560,10 @@ bio_age_df |>
   filter(age_data_exists)
 # any missing ages are because that tag doesn't have a scale age associated with it
 
+bio_age_df |>
+  filter(is.na(age)) |>
+  tabyl(spawn_year)
+
 #-----------------------------------------------------------------
 # reduce to one row per tag / spawn year
 bio_age_df |>
@@ -667,7 +674,8 @@ max_yr = max(bio_final_df$spawn_year)
 
 # pull out PIT tag numbers by spawn year
 tag_list <-
-  bio_final_df |>
+  # bio_final_df |>
+  tagging_df |>
   select(spawn_year,
          contains("pit_tag")) |>
   pivot_longer(cols = contains("pit_tag"),
