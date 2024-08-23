@@ -18,9 +18,9 @@
 #                    "moments",
 #                    "coda"))
 #
-# devtools::install_github("KevinSee/STADEM")
-# devtools::install_github("KevinSee/PITcleanr")
-# devtools::install_github("KevinSee/DABOM")
+# remotes::install_github("KevinSee/STADEM")
+# remotes::install_github("KevinSee/PITcleanr")
+# remotes::install_github("KevinSee/DABOM")
 
 #-----------------------------------------------------------------
 # load needed libraries
@@ -135,36 +135,20 @@ configuration = org_config %>%
                             ))) |>
   distinct() %>%
   # correct a couple rkm values
-  mutate(rkm = if_else(site_code == 'SA1',
-                       '858.041.003',
-                       rkm),
-         rkm_total = if_else(site_code == 'SA1',
-                             902,
-                             rkm_total)) %>%
-  mutate(rkm = if_else(site_code == 'TON',
-                       '858.133.001',
-                       rkm),
-         rkm_total = if_else(site_code == 'TON',
-                             992,
-                             rkm_total)) %>%
-  mutate(rkm = if_else(grepl('WEH', node),
-                       '829.001',
-                       rkm),
-         rkm_total = if_else(grepl('WEH', node),
-                             830,
-                             rkm_total)) %>%
-  mutate(rkm = if_else(site_code == "MSH",
-                       '843.082',
-                       rkm),
-         rkm_total = if_else(site_code == "MSH",
-                             925,
-                             rkm_total),
-         rkm = if_else(site_code == "METH",
-                       '843.083',
-                       rkm),
-         rkm_total = if_else(site_code == "METH",
-                             926,
-                             rkm_total))
+  mutate(across(rkm,
+                ~ case_when(site_code == 'SA1' ~ '858.041.003',
+                            site_code == 'TON' ~ '858.133.001',
+                            str_detect(node, "WEH") ~ '829.001',
+                            site_code == "MSH" ~ '843.082',
+                            site_code == "METH" ~ '843.083',
+                            .default = .)),
+         across(rkm_total,
+                ~ case_when(site_code == 'SA1' ~ 902,
+                            site_code == 'TON' ~ 992,
+                            str_detect(node, "WEH") ~ 830,
+                            site_code == "MSH" ~ 925,
+                            site_code == "METH" ~ 926,
+                            .default = .)))
 
 # Node network for DABOM
 
