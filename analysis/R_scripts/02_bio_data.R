@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: create tag lists to feed to PTAGIS query
 # Created: 8/15/2023
-# Last Modified: 3/15/2024
+# Last Modified: 11/7/2024
 # Notes:
 
 #-----------------------------------------------------------------
@@ -144,6 +144,7 @@ extra_tags |>
   adorn_totals()
 # some are recoveries (i.e. died at Priest)
 # the rest are orphan or disowned tags (https://www.ptagis.org/FAQ#11); missing mark information
+# in 2024, these 4 extra tags are actually the 2nd PIT tag in these fish
 extra_tags |>
   filter(event_type != "Recovery") |>
   select(spawn_year,
@@ -314,6 +315,22 @@ bio_df <-
 
 sum(bio_df$second_pit_tag %in% bio_df$pit_tag)
 
+bio_df |>
+  filter(second_pit_tag %in% pit_tag) |>
+  as.data.frame()
+bio_df |>
+  filter(pit_tag %in% second_pit_tag) |>
+  as.data.frame()
+
+# there are 4 fish with duplicate records
+# one record lists 2 tags
+# the other lists only the 2nd tag as the primary one
+# dropping the latter
+bio_df <-
+  bio_df |>
+  anti_join(bio_df |>
+              filter(pit_tag %in% second_pit_tag))
+
 
 
 bio_df |>
@@ -462,7 +479,8 @@ setdiff(unique(bio_df$event_file_name[bio_df$spawn_year %in% unique(scale_age_df
 # what tags do not have age data associated with them?
 bio_df |>
   filter(!pit_tag %in% scale_age_df$primary_pit_tag,
-         !second_pit_tag %in% scale_age_df$primary_pit_tag)
+         !second_pit_tag %in% scale_age_df$primary_pit_tag) |>
+  as.data.frame()
 
 # pull out some information about those tags
 bio_df |>

@@ -23,12 +23,12 @@ library(here)
 load(here('analysis/data/derived_data/site_config.rda'))
 
 # which spawn year are we dealing with?
-yr = 2014
+yr = 2024
 
-for(yr in 2011:2023) {
+# for(yr in 2011:2023) {
 
 # load and file biological data
-bio_df = read_rds(here('analysis/data/derived_data/Bio_Data_2011_2023.rds')) %>%
+bio_df = read_rds(here('analysis/data/derived_data/Bio_Data_2011_2024.rds')) %>%
   filter(spawn_year == yr)
 
 # any double-tagged fish?
@@ -120,25 +120,26 @@ if(nrow(dbl_tag) > 0) {
 }
 
 # compress and process those observations with PITcleanr
-prepped_ch = PITcleanr::prepWrapper(cth_file = ptagis_obs,
-                                    file_type = "PTAGIS",
-                                    configuration = configuration,
-                                    parent_child = parent_child %>%
-                                      addParentChildNodes(configuration = configuration),
-                                    min_obs_date = start_date,
-                                    max_obs_date = max_obs_date,
-                                    ignore_event_vs_release = F,
-                                    filter_orphan_disown_tags = FALSE,
-                                    add_tag_detects = T,
-                                    save_file = T,
-                                    file_name = here('outgoing/PITcleanr', paste0('UC_Steelhead_', yr, '.xlsx')))
-                                    # file_name = paste0("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd",
-                                    #                    "/inputs",
-                                    #                    "/PITcleanr",
-                                    #                    "/PITcleanr Initial",
-                                    #                    "/UC_Steelhead_",
-                                    #                    yr,
-                                    #                    ".xlsx"))
+prepped_ch <-
+  PITcleanr::prepWrapper(cth_file = ptagis_obs,
+                         file_type = "PTAGIS",
+                         configuration = configuration,
+                         parent_child = parent_child %>%
+                           addParentChildNodes(configuration = configuration),
+                         min_obs_date = start_date,
+                         max_obs_date = max_obs_date,
+                         ignore_event_vs_release = F,
+                         filter_orphan_disown_tags = FALSE,
+                         add_tag_detects = T,
+                         save_file = T,
+                         # file_name = here('outgoing/PITcleanr', paste0('UC_Steelhead_', yr, '.xlsx')))
+                         file_name = paste0("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd",
+                                            "/inputs",
+                                            "/PITcleanr",
+                                            "/PITcleanr Initial",
+                                            "/UC_Steelhead_",
+                                            yr,
+                                            ".xlsx"))
 
 
 # save some stuff
@@ -147,11 +148,39 @@ save(parent_child, configuration, start_date, bio_df, prepped_ch,
                  paste0('UC_Steelhead_', yr, '.rda')))
 
 
-rm(start_date, bio_df, prepped_ch,
-   ptagis_file,
-   ptagis_obs,
-   dbl_tag)
-}
+# pull out Okanogan tags
+
+# save to GitHub repo
+prepped_ch |>
+  filter(str_detect(path, "OKL")) |>
+  select(tag_code) |>
+  distinct() |>
+  left_join(prepped_ch) |>
+  writexl::write_xlsx(here('outgoing/PITcleanr',
+                           paste0('UC_Steelhead_',
+                                  yr,
+                                  '_OKL.xlsx')))
+# save to Teams site
+prepped_ch |>
+  filter(str_detect(path, "OKL")) |>
+  select(tag_code) |>
+  distinct() |>
+  left_join(prepped_ch) |>
+  writexl::write_xlsx(paste0("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd",
+                             "/inputs",
+                             "/PITcleanr",
+                             "/PITcleanr Initial",
+                             "/UC_Steelhead_",
+                             yr,
+                             "_OKL.xlsx"))
+
+
+
+# rm(start_date, bio_df, prepped_ch,
+#    ptagis_file,
+#    ptagis_obs,
+#    dbl_tag)
+# }
 
 #-------------------------------------------
 # NEXT STEPS
@@ -159,7 +188,7 @@ rm(start_date, bio_df, prepped_ch,
 # open that Excel file, and filter on the column user_keep_obs, looking for blanks. Fill in each row with TRUE or FALSE, depending on whether that observation should be kept or not. The column auto_keep_obs provides a suggestion, but the biologist's best expert judgment should be used based on detection dates, detection locations before and after, etc.
 
 # which spawn year are we dealing with?
-yr = 2023
+yr = 2024
 
 load(here('analysis/data/derived_data/PITcleanr',
           paste0('UC_Steelhead_', yr, '.rda')))
@@ -369,19 +398,13 @@ brnch_df = buildNodeOrder(addParentChildNodes(parent_child, configuration)) %>%
   separate(col = path,
            into = paste("step", 1:max(.$node_order), sep = "_"),
            remove = F) %>%
-  mutate(branch_nm = if_else(node == "PRA",
-                             "Start",
-                             if_else(grepl('LWE', path) | node %in% c("CLK"),
-                                     "Wenatchee",
-                                     if_else(grepl("ENL", path),
-                                             "Entiat",
-                                             if_else(grepl("LMR", path),
-                                                     "Methow",
-                                                     if_else(grepl("OKL", path) | node %in% c("FST"),
-                                                             "Okanogan",
-                                                             if_else(step_2 != "RIA" & !is.na(step_2),
-                                                                     "Downstream",
-                                                                     "Mainstem"))))))) %>%
+  mutate(branch_nm = case_when(node == "PRA" ~ "Start",
+                               str_detect(path, "LWE") | node %in% c("CLK") ~ "Wenatchee",
+                               str_detect(path, "ENL") ~ "Entiat",
+                               str_detect(path, "LMR") ~ "Methow",
+                               str_detect(path, "OKL") | node %in% c("FST") ~ "Okanogan",
+                               step_2 != "RIA" & !is.na(step_2) ~ "Downstream",
+                               .default = "Mainstem")) |>
   select(-starts_with("step"))
 
 tag_summ %<>%
