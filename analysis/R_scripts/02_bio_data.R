@@ -47,6 +47,13 @@ sthd_tags <-
   sthd_tags |>
   filter(spawn_year <= year(today()))
 
+# drop any steelhead tags that were put in during Spring Chinook sampling
+# since Spring Chinook sampling only occurred for 3 years
+sthd_tags <-
+  sthd_tags |>
+  filter(!between(month(event_release_date_time_value), 1, 5))
+
+
 # pull out MRR data about all PIT tags from those MRR files
 all_tags <-
   sthd_tags |>
@@ -100,8 +107,8 @@ all_tags <-
   #        # ignore strange tag numbers
   #        str_detect(pit_tag, "\\.\\.\\.", negate = T)) |>
   # fix a few metrics
-  mutate(across(poh,
-                as.numeric)) |>
+  # mutate(across(poh,
+  #               as.numeric)) |>
   # assign sex based on conditional comments
   mutate(sex = case_when(str_detect(conditional_comments, "FE") ~ "Female",
                          str_detect(conditional_comments, "MA") ~ "Male",
@@ -234,7 +241,7 @@ bio_df <-
          cwt,
          ad_clip,
          length,
-         poh,
+         # poh,
          conditional_comments,
          text_comments,
          scale_id) |>
@@ -242,7 +249,7 @@ bio_df <-
                 ~ if_else(is.na(.),
                           event_date,
                           .)))
-# use release date as the trap date
+# use release date as the trap date?
 
 
 # deal with fish with second PIT tags, reduce to one row / fish
@@ -354,9 +361,11 @@ sthd_tags |>
                            names_to = "order",
                            values_to = "tag_code") |>
               filter(!is.na(tag_code)) |>
-              select(tag_code)) |>
+              select(tag_code),
+            by = join_by(tag_code)) |>
   select(pit_tag = tag_code) |>
-  inner_join(all_tags) |>
+  inner_join(all_tags,
+             by = join_by(pit_tag)) |>
   select(spawn_year,
          pit_tag,
          species_run_rear_type,
@@ -580,7 +589,10 @@ bio_age_df |>
 
 bio_age_df |>
   filter(is.na(age)) |>
-  tabyl(spawn_year)
+  tabyl(spawn_year) |>
+  left_join(scale_age_df |>
+              group_by(spawn_year) |>
+              summarize(miss_age = sum(is.na(age))))
 
 #-----------------------------------------------------------------
 # reduce to one row per tag / spawn year
