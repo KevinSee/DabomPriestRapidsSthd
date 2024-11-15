@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: create tag lists to feed to PTAGIS query
 # Created: 8/15/2023
-# Last Modified: 11/7/2024
+# Last Modified: 11/15/2024
 # Notes:
 
 #-----------------------------------------------------------------
@@ -47,11 +47,11 @@ sthd_tags <-
   sthd_tags |>
   filter(spawn_year <= year(today()))
 
-# drop any steelhead tags that were put in during Spring Chinook sampling
+# drop any steelhead tags that were put in during Spring Chinook sampling (prior to July 1)
 # since Spring Chinook sampling only occurred for 3 years
 sthd_tags <-
   sthd_tags |>
-  filter(!between(month(event_release_date_time_value), 1, 5))
+  filter(!between(month(event_release_date_time_value), 1, 6))
 
 
 # pull out MRR data about all PIT tags from those MRR files
