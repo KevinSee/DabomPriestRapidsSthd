@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: format results to be saved
 # Created: 11/30/22
-# Last Modified: 1/8/2024
+# Last Modified: 11/14/2024
 # Notes:
 
 #-----------------------------------------------------------------
@@ -49,7 +49,7 @@ makeTableNms = function(df) {
 
 #-----------------------------------------------------------------
 # set the highest year to be included
-max_yr = 2023
+max_yr = 2024
 # max_yr = lubridate::year(lubridate::today()) - 1
 
 #-----------------------------------------------------------------
@@ -63,13 +63,14 @@ min_non0_wks = 3
 
 
 #-----------------------------------------------------------------
-spwn_est <- crossing(population = c("Wenatchee",
-                                    "Methow"),
-                     spawn_year = 2014:max_yr) |>
+spwn_est <-
+  crossing(population = c("Wenatchee",
+                          "Methow"),
+           spawn_year = 2014:max_yr) |>
   mutate(run_year = spawn_year - 1) %>%
   select(run_year, spawn_year, population) %>%
   filter(!(population == "Methow" &
-             spawn_year < 2021)) %>%
+             spawn_year < 2021)) |>
   mutate(results_list = map2(spawn_year,
                              population,
                              .f = possibly(function(yr, pop) {
@@ -77,33 +78,41 @@ spwn_est <- crossing(population = c("Wenatchee",
                                message(paste("Prepping data from", pop, yr, "\n\n"))
 
                                rm(redd_df,
-                                  wen_tags,
-                                  met_tags,
+                                  # wen_tags,
+                                  # met_tags,
+                                  basin_tags,
                                   sex_err,
                                   fpr_df,
                                   trib_spawners,
-                                  escp_wen,
-                                  escp_met,
+                                  # escp_wen,
+                                  # escp_met,
                                   escp_est,
                                   rem_df,
                                   trib_NAs)
 
-                               if(pop == "Wenatchee") {
-                                 prep_wen_sthd_data(query_year = yr,
-                                                    n_observers = "two",
-                                                    phos_data = "escapement",
-                                                    save_rda = F)
-                                 escp_est = escp_wen
-                                 rm(escp_wen)
-                               } else if(pop == "Methow") {
-                                 prep_met_sthd_data(query_year = yr,
-                                                    n_observers = "two",
-                                                    save_rda = F)
-                                 escp_est = escp_met
-                                 rm(escp_met)
-                               } else {
-                                 return(NULL)
-                               }
+                               prep_uc_sthd_data(basin = pop,
+                                                 query_year = yr,
+                                                 n_observers = "two",
+                                                 phos_data = "escapement",
+                                                 save_rda = F)
+
+
+                               # if(pop == "Wenatchee") {
+                               #   prep_wen_sthd_data(query_year = yr,
+                               #                      n_observers = "two",
+                               #                      phos_data = "escapement",
+                               #                      save_rda = F)
+                               #   escp_est = escp_wen
+                               #   rm(escp_wen)
+                               # } else if(pop == "Methow") {
+                               #   prep_met_sthd_data(query_year = yr,
+                               #                      n_observers = "two",
+                               #                      save_rda = F)
+                               #   escp_est = escp_met
+                               #   rm(escp_met)
+                               # } else {
+                               #   return(NULL)
+                               # }
 
                                # for tributary estimates, make any 0s NAs
                                trib_NAs <-
@@ -275,8 +284,7 @@ spwn_est <- crossing(population = c("Wenatchee",
                                      group_by(river) |>
                                      summarize(across(c(nos_est = Natural,
                                                         hos_est = Hatchery),
-                                                      sum,
-                                                      na.rm = T),
+                                                      ~ sum(., na.rm = T)),
                                                across(c(nos_se = Natural_SE,
                                                         hos_se = Hatchery_SE),
                                                       ~ sqrt(sum(.^2, na.rm = T))),
@@ -295,10 +303,10 @@ spwn_est <- crossing(population = c("Wenatchee",
                                             across(river,
                                                    as.factor),
                                             across(river,
-                                                   fct_relevel,
-                                                   "Wenatchee (mainstem)",
-                                                   "Lower Methow (mainstem)",
-                                                   after = Inf)) |>
+                                                   ~ fct_relevel(.,
+                                                                 "Wenatchee (mainstem)",
+                                                                 "Lower Methow (mainstem)",
+                                                                 after = Inf))) |>
                                      arrange(river) |>
                                      select(river,
                                             total_spawners,
@@ -406,7 +414,7 @@ spwn_est <- crossing(population = c("Wenatchee",
 
                                    # get pHOS of females to apply to redd estimates
                                    phos_female <-
-                                     wen_tags |>
+                                     basin_tags |>
                                      filter(sex == "Female") |>
                                      count(location, origin, sex) |>
                                      group_by(location) |>
@@ -423,7 +431,7 @@ spwn_est <- crossing(population = c("Wenatchee",
                                      # female estimates in tributaries based on PIT tags
                                      trib_spawners |>
                                      mutate(across(location,
-                                                   ~ case_when(. %in% unique(wen_tags$location) ~ .,
+                                                   ~ case_when(. %in% unique(basin_tags$location) ~ .,
                                                                .default = "Other Tributaries"))) |>
                                      group_by(spawn_year,
                                               origin,
@@ -433,7 +441,7 @@ spwn_est <- crossing(population = c("Wenatchee",
                                                across(spawners_se,
                                                       ~ sqrt(sum(.^2))),
                                                .groups = "drop") |>
-                                     left_join(wen_tags |>
+                                     left_join(basin_tags |>
                                                  count(location, origin, sex) |>
                                                  group_by(location) |>
                                                  mutate(prop = n / sum(n),
@@ -708,7 +716,7 @@ spwn_est <- crossing(population = c("Wenatchee",
                                    # female estimates in tributaries based on PIT tags
                                    trib_spawners |>
                                    mutate(across(location,
-                                                 ~ case_when(. %in% unique(wen_tags$location) ~ .,
+                                                 ~ case_when(. %in% unique(basin_tags$location) ~ .,
                                                              .default = "Other Tributaries"))) |>
                                    group_by(origin,
                                             location) |>
@@ -717,9 +725,9 @@ spwn_est <- crossing(population = c("Wenatchee",
                                              across(spawners_se,
                                                     ~ sqrt(sum(.^2))),
                                              .groups = "drop") |>
-                                   left_join(wen_tags |>
+                                   left_join(basin_tags |>
                                                count(location, origin, sex) |>
-                                               right_join(expand(wen_tags,
+                                               right_join(expand(basin_tags,
                                                                  location,
                                                                  origin,
                                                                  sex),
@@ -768,7 +776,7 @@ spwn_est <- crossing(population = c("Wenatchee",
                                        select(-name) |>
                                        pivot_wider(names_from = est_type,
                                                    values_from = value) |>
-                                       left_join(wen_tags |>
+                                       left_join(basin_tags |>
                                                    filter(str_detect(location, "Tumwater")) |>
                                                    mutate(location = "Wenatchee (mainstem)") |>
                                                    count(location, origin, sex) |>
@@ -804,6 +812,7 @@ spwn_est <- crossing(population = c("Wenatchee",
                                    return()
                                }
                              },
+                             quiet = F,
                              otherwise = NULL)))
 
 redd_spwn <-
@@ -2215,19 +2224,21 @@ save_list <- list(
 write_xlsx(x = save_list,
            path = paste0("T:/DFW-Team FP Upper Columbia Escapement - General/",
                          "UC_Sthd/Estimates/",
-                         "UC_STHD_Model_Output.xlsx"))
+                         "UC_STHD_Model_Output",
+                         "_", format(today(), "%Y%m%d"),
+                         ".xlsx"))
 
 #--------------------------------------------------------------
 # read in previous estimates, add latest year to them
 
 # what year are we overwriting or adding?
-yr = 2023
+yr = 2024
 
 library(readxl)
 output_path <- paste0("T:/DFW-Team FP Upper Columbia Escapement - General/",
                       "UC_Sthd/Estimates/",
-                      # "UC_STHD_Model_Output.xlsx")
-                      "UC_STHD_Model_Output_20240108.xlsx")
+                      "UC_STHD_Model_Output.xlsx")
+                      # "UC_STHD_Model_Output_20240108.xlsx")
 
 tab_nms <- excel_sheets(output_path)
 

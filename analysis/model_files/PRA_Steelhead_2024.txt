@@ -1,0 +1,788 @@
+model {
+
+# Priors for detection probabilities 
+
+	 ICH_D_p ~ dbeta(1, 1);
+	 ICH_U_p ~ dbeta(1, 1);
+	 JD1_D_p ~ dbeta(1, 1);
+	 JD1_U_p ~ dbeta(1, 1);
+	 JDA_p <- 1; # Single array, no upstream detections
+	 PRH_p <- 1; # Single array, no upstream detections
+	 PRO_D_p ~ dbeta(1, 1);
+	 PRO_U_p ~ dbeta(1, 1);
+	 PRV_p <- 0; # no detections / not in operation
+	 HST_D_p ~ dbeta(1, 1);
+	 HST_U_p ~ dbeta(1, 1);
+	 MDR_D_p <- 0; # no detections / not in operation
+	 MDR_U_p <- 0; # no detections / not in operation
+	 RIA_p ~ dbeta(1, 1);
+	 CLK_p <- 0; # no detections / not in operation
+	 LWE_D_p ~ dbeta(1, 1);
+	 LWE_U_p ~ dbeta(1, 1);
+	 CHM_D_p ~ dbeta(1, 1);
+	 CHM_U_p ~ dbeta(1, 1);
+	 ICL_D_p ~ dbeta(1, 1);
+	 ICL_U_p ~ dbeta(1, 1);
+	 ICM_D_p ~ dbeta(1, 1);
+	 ICM_U_p ~ dbeta(1, 1);
+	 ICU_D_p <- 0; # no detections / not in operation
+	 ICU_U_p <- 0; # no detections / not in operation
+	 LNF_D_p <- 0; # no detections / not in operation
+	 LNF_U_p <- 0; # no detections / not in operation
+	 MCL_D_p ~ dbeta(1, 1);
+	 MCL_U_p ~ dbeta(1, 1);
+	 PES_D_p ~ dbeta(1, 1);
+	 PES_U_p ~ dbeta(1, 1);
+	 PEU_D_p ~ dbeta(1, 1);
+	 PEU_U_p ~ dbeta(1, 1);
+	 TUM_p ~ dbeta(1, 1);
+	 CHL_D_p ~ dbeta(1, 1);
+	 CHL_U_p ~ dbeta(1, 1);
+	 CHU_D_p ~ dbeta(1, 1);
+	 CHU_U_p ~ dbeta(1, 1);
+	 CHW_D_p ~ dbeta(1, 1);
+	 CHW_U_p ~ dbeta(1, 1);
+	 UWE_p ~ dbeta(1, 1);
+	 LWN_D_p <- 0; # no detections / not in operation
+	 LWN_U_p <- 0; # no detections / not in operation
+	 NAL_D_p ~ dbeta(1, 1);
+	 NAL_U_p ~ dbeta(1, 1);
+	 NAU_D_p ~ dbeta(1, 1);
+	 NAU_U_p ~ dbeta(1, 1);
+	 WTL_D_p ~ dbeta(1, 1);
+	 WTL_U_p ~ dbeta(1, 1);
+	 RRF_p ~ dbeta(1, 1);
+	 EBO_D_p <- 1; # Single array, no upstream detections
+	 ENL_D_p ~ dbeta(1, 1);
+	 ENL_U_p ~ dbeta(1, 1);
+	 EHL_D_p <- 0; # no detections / not in operation
+	 EHL_U_p <- 0; # no detections / not in operation
+	 ENA_D_p ~ dbeta(1, 1);
+	 ENA_U_p ~ dbeta(1, 1);
+	 ENF_D_p <- 0; # no detections / not in operation
+	 ENF_U_p <- 0; # no detections / not in operation
+	 MAD_D_p <- 0; # no detections / not in operation
+	 MAD_U_p <- 1; # Single array, no upstream detections
+	 RCT_D_p ~ dbeta(1, 1);
+	 RCT_U_p ~ dbeta(1, 1);
+	 WEA_p ~ dbeta(1, 1);
+	 FST_p <- 1; # Single array, no upstream detections
+	 LMR_D_p ~ dbeta(1, 1);
+	 LMR_U_p ~ dbeta(1, 1);
+	 GLC_D_p ~ dbeta(1, 1);
+	 GLC_U_p ~ dbeta(1, 1);
+	 LBC_D_p ~ dbeta(1, 1);
+	 LBC_U_p ~ dbeta(1, 1);
+	 MRC_D_p ~ dbeta(1, 1);
+	 MRC_U_p <- 0; # no detections / not in operation
+	 BVC_D_p ~ dbeta(1, 1);
+	 BVC_U_p ~ dbeta(1, 1);
+	 CRW_D_p ~ dbeta(1, 1);
+	 CRW_U_p ~ dbeta(1, 1);
+	 CRU_D_p ~ dbeta(1, 1);
+	 CRU_U_p ~ dbeta(1, 1);
+	 MRW_D_p ~ dbeta(1, 1);
+	 MRW_U_p ~ dbeta(1, 1);
+	 WFC_p <- 1; # Single array, no upstream detections
+	 SCP_D_p ~ dbeta(1, 1);
+	 SCP_U_p ~ dbeta(1, 1);
+	 TWR_D_p ~ dbeta(1, 1);
+	 TWR_U_p ~ dbeta(1, 1);
+	 TWISPW_p <- 1; # Single array, no upstream detections
+	 OKL_D_p ~ dbeta(1, 1);
+	 OKL_U_p ~ dbeta(1, 1);
+	 AEN_p <- 1; # Single array, no upstream detections
+	 ANT_D_p ~ dbeta(1, 1);
+	 ANT_U_p ~ dbeta(1, 1);
+	 ANR_p <- 0; # no detections / not in operation
+	 BPC_D_p ~ dbeta(1, 1);
+	 BPC_U_p ~ dbeta(1, 1);
+	 JOH_p <- 1; # Single array, no upstream detections
+	 LLC_D_p ~ dbeta(1, 1);
+	 LLC_U_p ~ dbeta(1, 1);
+	 OMK_D_p ~ dbeta(1, 1);
+	 OMK_U_p ~ dbeta(1, 1);
+	 OBF_p ~ dbeta(1, 1);
+	 OMF_D_p ~ dbeta(1, 1);
+	 OMF_U_p <- 0; # no detections / not in operation
+	 OMH_p <- 0; # no detections / not in operation
+	 SA1_D_p ~ dbeta(1, 1);
+	 SA1_U_p ~ dbeta(1, 1);
+	 SA0_D_p <- 0; # no detections / not in operation
+	 SA0_U_p <- 0; # no detections / not in operation
+	 SAD_p <- 1; # Single array, no upstream detections
+	 TNK_p <- 1; # Single array, no upstream detections
+	 WAN_p <- 0; # no detections / not in operation
+	 WHS_p <- 1; # Single array, no upstream detections
+	 ZSL_D_p ~ dbeta(1, 1);
+	 ZSL_U_p <- 0; # no detections / not in operation
+	 NMC_D_p <- 0; # no detections / not in operation
+	 NMC_U_p <- 0; # no detections / not in operation
+	 OKC_D_p ~ dbeta(1, 1);
+	 OKC_U_p <- 0; # no detections / not in operation
+	 OKM_p <- 0; # no detections / not in operation
+	 OKW_D_p <- 0; # no detections / not in operation
+	 OKW_U_p <- 0; # no detections / not in operation
+	 SKA_D_p <- 0; # no detections / not in operation
+	 SKA_U_p <- 0; # no detections / not in operation
+	 OKP_p <- 0; # no detections / not in operation
+	 OKS_D_p <- 0; # no detections / not in operation
+	 OKS_U_p <- 0; # no detections / not in operation
+	 OKV_D_p ~ dbeta(1, 1);
+	 OKV_U_p ~ dbeta(1, 1);
+	 OKI_D_p <- 0; # no detections / not in operation
+	 OKI_U_p <- 0; # no detections / not in operation
+	 TON_p <- 1; # Single array, no upstream detections
+	 WEH_D_p ~ dbeta(1, 1);
+	 WEH_U_p ~ dbeta(1, 1);
+	 RSH_D_p ~ dbeta(1, 1);
+	 RSH_U_p ~ dbeta(1, 1);
+	 TMF_p <- 1; # Single array, no upstream detections
+
+# Priors for transition probabilities 
+
+	 psi_PRA[1, 1:n_branch_PRA] ~ ddirch(PRA_dirch_vec[1,]); 
+	 psi_PRA[2, 1:n_branch_PRA] ~ ddirch(PRA_dirch_vec[2,]); 
+
+	 omega_PRA[1, 1:n_branch_PRA] <- zero_vec[1:(n_branch_PRA)]; 
+	 omega_PRA[1, (n_branch_PRA + 1)] <- 1; 
+
+	 omega_PRA[2, 1:n_branch_PRA] <- psi_PRA[1,]; 
+	 omega_PRA[2, (n_branch_PRA + 1)] <- 0; 
+
+	 omega_PRA[3, 1:n_branch_PRA] <- psi_PRA[2,]; 
+	 omega_PRA[3, (n_branch_PRA + 1)] <- 0; 
+
+	 psi_RIA[1, 1:n_branch_RIA] ~ ddirch(RIA_dirch_vec[1,]); 
+	 psi_RIA[2, 1:n_branch_RIA] ~ ddirch(RIA_dirch_vec[2,]); 
+
+	 omega_RIA[1, 1:n_branch_RIA] <- zero_vec[1:(n_branch_RIA)]; 
+	 omega_RIA[1, (n_branch_RIA + 1)] <- 1; 
+
+	 omega_RIA[2, 1:n_branch_RIA] <- psi_RIA[1,]; 
+	 omega_RIA[2, (n_branch_RIA + 1)] <- 0; 
+
+	 omega_RIA[3, 1:n_branch_RIA] <- psi_RIA[2,]; 
+	 omega_RIA[3, (n_branch_RIA + 1)] <- 0; 
+
+	 psi_WEA[1, 1:n_branch_WEA] ~ ddirch(WEA_dirch_vec[1,]); 
+	 psi_WEA[2, 1:n_branch_WEA] ~ ddirch(WEA_dirch_vec[2,]); 
+
+	 omega_WEA[1, 1:n_branch_WEA] <- zero_vec[1:(n_branch_WEA)]; 
+	 omega_WEA[1, (n_branch_WEA + 1)] <- 1; 
+
+	 omega_WEA[2, 1:n_branch_WEA] <- psi_WEA[1,]; 
+	 omega_WEA[2, (n_branch_WEA + 1)] <- 0; 
+
+	 omega_WEA[3, 1:n_branch_WEA] <- psi_WEA[2,]; 
+	 omega_WEA[3, (n_branch_WEA + 1)] <- 0; 
+
+	 psi_LMR[1, 1:n_branch_LMR] ~ ddirch(LMR_dirch_vec[1,]); 
+	 psi_LMR[2, 1:n_branch_LMR] ~ ddirch(LMR_dirch_vec[2,]); 
+
+	 omega_LMR[1, 1:n_branch_LMR] <- zero_vec[1:(n_branch_LMR)]; 
+	 omega_LMR[1, (n_branch_LMR + 1)] <- 1; 
+
+	 omega_LMR[2, 1:n_branch_LMR] <- psi_LMR[1,]; 
+	 omega_LMR[2, (n_branch_LMR + 1)] <- 0; 
+
+	 omega_LMR[3, 1:n_branch_LMR] <- psi_LMR[2,]; 
+	 omega_LMR[3, (n_branch_LMR + 1)] <- 0; 
+
+	 psi_MRC[1, 1:n_branch_MRC] ~ ddirch(MRC_dirch_vec[1,]); 
+	 psi_MRC[2, 1:n_branch_MRC] ~ ddirch(MRC_dirch_vec[2,]); 
+
+	 omega_MRC[1, 1:n_branch_MRC] <- zero_vec[1:(n_branch_MRC)]; 
+	 omega_MRC[1, (n_branch_MRC + 1)] <- 1; 
+
+	 omega_MRC[2, 1:n_branch_MRC] <- psi_MRC[1,]; 
+	 omega_MRC[2, (n_branch_MRC + 1)] <- 0; 
+
+	 omega_MRC[3, 1:n_branch_MRC] <- psi_MRC[2,]; 
+	 omega_MRC[3, (n_branch_MRC + 1)] <- 0; 
+
+	 psi_OKL[1, 1:n_branch_OKL] ~ ddirch(OKL_dirch_vec[1,]); 
+	 psi_OKL[2, 1:n_branch_OKL] ~ ddirch(OKL_dirch_vec[2,]); 
+
+	 omega_OKL[1, 1:n_branch_OKL] <- zero_vec[1:(n_branch_OKL)]; 
+	 omega_OKL[1, (n_branch_OKL + 1)] <- 1; 
+
+	 omega_OKL[2, 1:n_branch_OKL] <- psi_OKL[1,]; 
+	 omega_OKL[2, (n_branch_OKL + 1)] <- 0; 
+
+	 omega_OKL[3, 1:n_branch_OKL] <- psi_OKL[2,]; 
+	 omega_OKL[3, (n_branch_OKL + 1)] <- 0; 
+
+	 psi_LWE[1, 1:n_branch_LWE] ~ ddirch(LWE_dirch_vec[1,]); 
+	 psi_LWE[2, 1:n_branch_LWE] ~ ddirch(LWE_dirch_vec[2,]); 
+
+	 omega_LWE[1, 1:n_branch_LWE] <- zero_vec[1:(n_branch_LWE)]; 
+	 omega_LWE[1, (n_branch_LWE + 1)] <- 1; 
+
+	 omega_LWE[2, 1:n_branch_LWE] <- psi_LWE[1,]; 
+	 omega_LWE[2, (n_branch_LWE + 1)] <- 0; 
+
+	 omega_LWE[3, 1:n_branch_LWE] <- psi_LWE[2,]; 
+	 omega_LWE[3, (n_branch_LWE + 1)] <- 0; 
+
+	 psi_PRV[1, 1:n_branch_PRV] ~ ddirch(PRV_dirch_vec[1,]); 
+	 psi_PRV[2, 1:n_branch_PRV] ~ ddirch(PRV_dirch_vec[2,]); 
+
+	 omega_PRV[1, 1:n_branch_PRV] <- zero_vec[1:(n_branch_PRV)]; 
+	 omega_PRV[1, (n_branch_PRV + 1)] <- 1; 
+
+	 omega_PRV[2, 1:n_branch_PRV] <- psi_PRV[1,]; 
+	 omega_PRV[2, (n_branch_PRV + 1)] <- 0; 
+
+	 omega_PRV[3, 1:n_branch_PRV] <- psi_PRV[2,]; 
+	 omega_PRV[3, (n_branch_PRV + 1)] <- 0; 
+
+	 psi_ICL[1, 1:n_branch_ICL] ~ ddirch(ICL_dirch_vec[1,]); 
+	 psi_ICL[2, 1:n_branch_ICL] ~ ddirch(ICL_dirch_vec[2,]); 
+
+	 omega_ICL[1, 1:n_branch_ICL] <- zero_vec[1:(n_branch_ICL)]; 
+	 omega_ICL[1, (n_branch_ICL + 1)] <- 1; 
+
+	 omega_ICL[2, 1:n_branch_ICL] <- psi_ICL[1,]; 
+	 omega_ICL[2, (n_branch_ICL + 1)] <- 0; 
+
+	 omega_ICL[3, 1:n_branch_ICL] <- psi_ICL[2,]; 
+	 omega_ICL[3, (n_branch_ICL + 1)] <- 0; 
+
+	 psi_TUM[1, 1:n_branch_TUM] ~ ddirch(TUM_dirch_vec[1,]); 
+	 psi_TUM[2, 1:n_branch_TUM] ~ ddirch(TUM_dirch_vec[2,]); 
+
+	 omega_TUM[1, 1:n_branch_TUM] <- zero_vec[1:(n_branch_TUM)]; 
+	 omega_TUM[1, (n_branch_TUM + 1)] <- 1; 
+
+	 omega_TUM[2, 1:n_branch_TUM] <- psi_TUM[1,]; 
+	 omega_TUM[2, (n_branch_TUM + 1)] <- 0; 
+
+	 omega_TUM[3, 1:n_branch_TUM] <- psi_TUM[2,]; 
+	 omega_TUM[3, (n_branch_TUM + 1)] <- 0; 
+
+	 phi_MRW[1] ~ dbeta(1, 1); 
+	 phi_MRW[2] ~ dbeta(1, 1); 
+
+	 psi_ENL[1, 1:n_branch_ENL] ~ ddirch(ENL_dirch_vec[1,]); 
+	 psi_ENL[2, 1:n_branch_ENL] ~ ddirch(ENL_dirch_vec[2,]); 
+
+	 omega_ENL[1, 1:n_branch_ENL] <- zero_vec[1:(n_branch_ENL)]; 
+	 omega_ENL[1, (n_branch_ENL + 1)] <- 1; 
+
+	 omega_ENL[2, 1:n_branch_ENL] <- psi_ENL[1,]; 
+	 omega_ENL[2, (n_branch_ENL + 1)] <- 0; 
+
+	 omega_ENL[3, 1:n_branch_ENL] <- psi_ENL[2,]; 
+	 omega_ENL[3, (n_branch_ENL + 1)] <- 0; 
+
+	 phi_TWR[1] ~ dbeta(1, 1); 
+	 phi_TWR[2] ~ dbeta(1, 1); 
+
+	 phi_ENA[1] <- 0 # no upstream detections
+	 phi_ENA[2] <- 0 # no upstream detections
+
+	 phi_CRW[1] ~ dbeta(1, 1); 
+	 phi_CRW[2] ~ dbeta(1, 1); 
+
+	 phi_ICM[1] <- 0 # no upstream detections
+	 phi_ICM[2] <- 0 # no upstream detections
+
+	 psi_UWE[1, 1:n_branch_UWE] ~ ddirch(UWE_dirch_vec[1,]); 
+	 psi_UWE[2, 1:n_branch_UWE] ~ ddirch(UWE_dirch_vec[2,]); 
+
+	 omega_UWE[1, 1:n_branch_UWE] <- zero_vec[1:(n_branch_UWE)]; 
+	 omega_UWE[1, (n_branch_UWE + 1)] <- 1; 
+
+	 omega_UWE[2, 1:n_branch_UWE] <- psi_UWE[1,]; 
+	 omega_UWE[2, (n_branch_UWE + 1)] <- 0; 
+
+	 omega_UWE[3, 1:n_branch_UWE] <- psi_UWE[2,]; 
+	 omega_UWE[3, (n_branch_UWE + 1)] <- 0; 
+
+	 psi_OKC[1, 1:n_branch_OKC] ~ ddirch(OKC_dirch_vec[1,]); 
+	 psi_OKC[2, 1:n_branch_OKC] ~ ddirch(OKC_dirch_vec[2,]); 
+
+	 omega_OKC[1, 1:n_branch_OKC] <- zero_vec[1:(n_branch_OKC)]; 
+	 omega_OKC[1, (n_branch_OKC + 1)] <- 1; 
+
+	 omega_OKC[2, 1:n_branch_OKC] <- psi_OKC[1,]; 
+	 omega_OKC[2, (n_branch_OKC + 1)] <- 0; 
+
+	 omega_OKC[3, 1:n_branch_OKC] <- psi_OKC[2,]; 
+	 omega_OKC[3, (n_branch_OKC + 1)] <- 0; 
+
+	 phi_CHL[1] ~ dbeta(1, 1); 
+	 phi_CHL[2] ~ dbeta(1, 1); 
+
+	 psi_SKA[1, 1:n_branch_SKA] ~ ddirch(SKA_dirch_vec[1,]); 
+	 psi_SKA[2, 1:n_branch_SKA] ~ ddirch(SKA_dirch_vec[2,]); 
+
+	 omega_SKA[1, 1:n_branch_SKA] <- zero_vec[1:(n_branch_SKA)]; 
+	 omega_SKA[1, (n_branch_SKA + 1)] <- 1; 
+
+	 omega_SKA[2, 1:n_branch_SKA] <- psi_SKA[1,]; 
+	 omega_SKA[2, (n_branch_SKA + 1)] <- 0; 
+
+	 omega_SKA[3, 1:n_branch_SKA] <- psi_SKA[2,]; 
+	 omega_SKA[3, (n_branch_SKA + 1)] <- 0; 
+
+	 phi_PES[1] ~ dbeta(1, 1); 
+	 phi_PES[2] ~ dbeta(1, 1); 
+
+	 phi_SA1[1] ~ dbeta(1, 1); 
+	 phi_SA1[2] ~ dbeta(1, 1); 
+
+	 phi_SA0[1] ~ dbeta(1, 1); 
+	 phi_SA0[2] ~ dbeta(1, 1); 
+
+	 phi_OMK[1] ~ dbeta(1, 1); 
+	 phi_OMK[2] ~ dbeta(1, 1); 
+
+	 phi_NAL[1] ~ dbeta(1, 1); 
+	 phi_NAL[2] ~ dbeta(1, 1); 
+
+	 phi_OBF[1] ~ dbeta(1, 1); 
+	 phi_OBF[2] ~ dbeta(1, 1); 
+
+	 phi_OMF[1] <- 0 # no upstream detections
+	 phi_OMF[2] <- 0 # no upstream detections
+
+	 psi_ZSL[1, 1:n_branch_ZSL] ~ ddirch(ZSL_dirch_vec[1,]); 
+	 psi_ZSL[2, 1:n_branch_ZSL] ~ ddirch(ZSL_dirch_vec[2,]); 
+
+	 omega_ZSL[1, 1:n_branch_ZSL] <- zero_vec[1:(n_branch_ZSL)]; 
+	 omega_ZSL[1, (n_branch_ZSL + 1)] <- 1; 
+
+	 omega_ZSL[2, 1:n_branch_ZSL] <- psi_ZSL[1,]; 
+	 omega_ZSL[2, (n_branch_ZSL + 1)] <- 0; 
+
+	 omega_ZSL[3, 1:n_branch_ZSL] <- psi_ZSL[2,]; 
+	 omega_ZSL[3, (n_branch_ZSL + 1)] <- 0; 
+
+	 phi_ANT[1] <- 0 # no upstream detections
+	 phi_ANT[2] <- 0 # no upstream detections
+
+	 psi_RRF[1, 1:n_branch_RRF] ~ ddirch(RRF_dirch_vec[1,]); 
+	 psi_RRF[2, 1:n_branch_RRF] ~ ddirch(RRF_dirch_vec[2,]); 
+
+	 omega_RRF[1, 1:n_branch_RRF] <- zero_vec[1:(n_branch_RRF)]; 
+	 omega_RRF[1, (n_branch_RRF + 1)] <- 1; 
+
+	 omega_RRF[2, 1:n_branch_RRF] <- psi_RRF[1,]; 
+	 omega_RRF[2, (n_branch_RRF + 1)] <- 0; 
+
+	 omega_RRF[3, 1:n_branch_RRF] <- psi_RRF[2,]; 
+	 omega_RRF[3, (n_branch_RRF + 1)] <- 0; 
+
+	 psi_OKM[1, 1:n_branch_OKM] ~ ddirch(OKM_dirch_vec[1,]); 
+	 psi_OKM[2, 1:n_branch_OKM] ~ ddirch(OKM_dirch_vec[2,]); 
+
+	 omega_OKM[1, 1:n_branch_OKM] <- zero_vec[1:(n_branch_OKM)]; 
+	 omega_OKM[1, (n_branch_OKM + 1)] <- 1; 
+
+	 omega_OKM[2, 1:n_branch_OKM] <- psi_OKM[1,]; 
+	 omega_OKM[2, (n_branch_OKM + 1)] <- 0; 
+
+	 omega_OKM[3, 1:n_branch_OKM] <- psi_OKM[2,]; 
+	 omega_OKM[3, (n_branch_OKM + 1)] <- 0; 
+
+# Where is each fish? 
+
+	 for(i in 1:n_fish) { 
+
+
+		 a_PRA[i] ~ dcat( omega_PRA[fish_type[i] + 1, 1:(n_branch_PRA+1)] ) 
+			 for (j in 1:n_branch_PRA)	{ 
+				 eta_PRA[i,j] <- equals(a_PRA[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+		 a_RIA[i] ~ dcat( omega_RIA[(eta_PRA[i,7] * fish_type[i] + 1), 1:(n_branch_RIA+1)] ) 
+			 for (j in 1:n_branch_RIA)	{ 
+				 eta_RIA[i,j] <- equals(a_RIA[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+		 a_WEA[i] ~ dcat( omega_WEA[(eta_RRF[i,3] * fish_type[i] + 1), 1:(n_branch_WEA+1)] ) 
+			 for (j in 1:n_branch_WEA)	{ 
+				 eta_WEA[i,j] <- equals(a_WEA[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+		 a_LMR[i] ~ dcat( omega_LMR[(eta_WEA[i,2] * fish_type[i] + 1), 1:(n_branch_LMR+1)] ) 
+			 for (j in 1:n_branch_LMR)	{ 
+				 eta_LMR[i,j] <- equals(a_LMR[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+		 a_MRC[i] ~ dcat( omega_MRC[(eta_LMR[i,3] * fish_type[i] + 1), 1:(n_branch_MRC+1)] ) 
+			 for (j in 1:n_branch_MRC)	{ 
+				 eta_MRC[i,j] <- equals(a_MRC[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+		 a_OKL[i] ~ dcat( omega_OKL[(eta_WEA[i,3] * fish_type[i] + 1), 1:(n_branch_OKL+1)] ) 
+			 for (j in 1:n_branch_OKL)	{ 
+				 eta_OKL[i,j] <- equals(a_OKL[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+		 a_LWE[i] ~ dcat( omega_LWE[(eta_RIA[i,2] * fish_type[i] + 1), 1:(n_branch_LWE+1)] ) 
+			 for (j in 1:n_branch_LWE)	{ 
+				 eta_LWE[i,j] <- equals(a_LWE[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+		 a_PRV[i] ~ dcat( omega_PRV[(eta_PRA[i,6] * fish_type[i] + 1), 1:(n_branch_PRV+1)] ) 
+			 for (j in 1:n_branch_PRV)	{ 
+				 eta_PRV[i,j] <- equals(a_PRV[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+		 a_ICL[i] ~ dcat( omega_ICL[(eta_LWE[i,2] * fish_type[i] + 1), 1:(n_branch_ICL+1)] ) 
+			 for (j in 1:n_branch_ICL)	{ 
+				 eta_ICL[i,j] <- equals(a_ICL[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+		 a_TUM[i] ~ dcat( omega_TUM[(eta_LWE[i,5] * fish_type[i] + 1), 1:(n_branch_TUM+1)] ) 
+			 for (j in 1:n_branch_TUM)	{ 
+				 eta_TUM[i,j] <- equals(a_TUM[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+		 eta_MRW[i] ~ dbern(eta_MRC[i, 3] * phi_MRW[fish_type[i]]) 
+
+		 a_ENL[i] ~ dcat( omega_ENL[(eta_RRF[i,2] * fish_type[i] + 1), 1:(n_branch_ENL+1)] ) 
+			 for (j in 1:n_branch_ENL)	{ 
+				 eta_ENL[i,j] <- equals(a_ENL[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+		 eta_TWR[i] ~ dbern(eta_MRC[i, 5] * phi_TWR[fish_type[i]]) 
+
+		 eta_ENA[i] ~ dbern(eta_ENL[i, 2] * phi_ENA[fish_type[i]]) 
+
+		 eta_CRW[i] ~ dbern(eta_MRC[i, 2] * phi_CRW[fish_type[i]]) 
+
+		 eta_ICM[i] ~ dbern(eta_ICL[i, 1] * phi_ICM[fish_type[i]]) 
+
+		 a_UWE[i] ~ dcat( omega_UWE[(eta_TUM[i,3] * fish_type[i] + 1), 1:(n_branch_UWE+1)] ) 
+			 for (j in 1:n_branch_UWE)	{ 
+				 eta_UWE[i,j] <- equals(a_UWE[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+		 a_OKC[i] ~ dcat( omega_OKC[(eta_ZSL[i,2] * fish_type[i] + 1), 1:(n_branch_OKC+1)] ) 
+			 for (j in 1:n_branch_OKC)	{ 
+				 eta_OKC[i,j] <- equals(a_OKC[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+		 eta_CHL[i] ~ dbern(eta_TUM[i, 1] * phi_CHL[fish_type[i]]) 
+
+		 a_SKA[i] ~ dcat( omega_SKA[(eta_OKM[i,2] * fish_type[i] + 1), 1:(n_branch_SKA+1)] ) 
+			 for (j in 1:n_branch_SKA)	{ 
+				 eta_SKA[i,j] <- equals(a_SKA[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+		 eta_PES[i] ~ dbern(eta_LWE[i, 4] * phi_PES[fish_type[i]]) 
+
+		 eta_SA1[i] ~ dbern(eta_OKL[i, 7] * phi_SA1[fish_type[i]]) 
+
+		 eta_SA0[i] ~ dbern(eta_SA1[i] * phi_SA0[fish_type[i]]) 
+
+		 eta_OMK[i] ~ dbern(eta_OKL[i, 6] * phi_OMK[fish_type[i]]) 
+
+		 eta_NAL[i] ~ dbern(eta_UWE[i, 2] * phi_NAL[fish_type[i]]) 
+
+		 eta_OBF[i] ~ dbern(eta_OMK[i] * phi_OBF[fish_type[i]]) 
+
+		 eta_OMF[i] ~ dbern(eta_OBF[i] * phi_OMF[fish_type[i]]) 
+
+		 a_ZSL[i] ~ dcat( omega_ZSL[(eta_OKL[i,11] * fish_type[i] + 1), 1:(n_branch_ZSL+1)] ) 
+			 for (j in 1:n_branch_ZSL)	{ 
+				 eta_ZSL[i,j] <- equals(a_ZSL[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+		 eta_ANT[i] ~ dbern(eta_OKL[i, 2] * phi_ANT[fish_type[i]]) 
+
+		 a_RRF[i] ~ dcat( omega_RRF[(eta_RIA[i,3] * fish_type[i] + 1), 1:(n_branch_RRF+1)] ) 
+			 for (j in 1:n_branch_RRF)	{ 
+				 eta_RRF[i,j] <- equals(a_RRF[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+		 a_OKM[i] ~ dcat( omega_OKM[(eta_OKC[i,1] * fish_type[i] + 1), 1:(n_branch_OKM+1)] ) 
+			 for (j in 1:n_branch_OKM)	{ 
+				 eta_OKM[i,j] <- equals(a_OKM[i],j) # equals(x,y) is a test for equality, returns [1,0] 
+			 }
+
+	} # end the n_fish loop 
+
+
+# Were tags observed? 
+
+	 for (i in 1:n_fish) {
+
+		 cap_hist[i,2] ~ dbern( ICH_D_p * eta_PRA[i,1] );
+
+		 cap_hist[i,3] ~ dbern( ICH_U_p * eta_PRA[i,1] );
+
+		 cap_hist[i,4] ~ dbern( JD1_D_p * eta_PRA[i,2] );
+
+		 cap_hist[i,5] ~ dbern( JD1_U_p * eta_PRA[i,2] );
+
+		 cap_hist[i,6] ~ dbern( JDA_p * eta_PRA[i,3] );
+
+		 cap_hist[i,7] ~ dbern( PRH_p * eta_PRA[i,4] );
+
+		 cap_hist[i,8] ~ dbern( PRO_D_p * eta_PRA[i,5] );
+
+		 cap_hist[i,9] ~ dbern( PRO_U_p * eta_PRA[i,5] );
+
+		 cap_hist[i,10] ~ dbern( PRV_p * eta_PRA[i,6] );
+
+		 cap_hist[i,11] ~ dbern( HST_D_p * eta_PRV[i,1] );
+
+		 cap_hist[i,12] ~ dbern( HST_U_p * eta_PRV[i,1] );
+
+		 cap_hist[i,13] ~ dbern( MDR_D_p * eta_PRV[i,2] );
+
+		 cap_hist[i,14] ~ dbern( MDR_U_p * eta_PRV[i,2] );
+
+		 cap_hist[i,15] ~ dbern( RIA_p * eta_PRA[i,7] );
+
+		 cap_hist[i,16] ~ dbern( CLK_p * eta_RIA[i,1] );
+
+		 cap_hist[i,17] ~ dbern( LWE_D_p * eta_RIA[i,2] );
+
+		 cap_hist[i,18] ~ dbern( LWE_U_p * eta_RIA[i,2] );
+
+		 cap_hist[i,19] ~ dbern( CHM_D_p * eta_LWE[i,1] );
+
+		 cap_hist[i,20] ~ dbern( CHM_U_p * eta_LWE[i,1] );
+
+		 cap_hist[i,21] ~ dbern( ICL_D_p * eta_LWE[i,2] );
+
+		 cap_hist[i,22] ~ dbern( ICL_U_p * eta_LWE[i,2] );
+
+		 cap_hist[i,23] ~ dbern( ICM_D_p * eta_ICL[i,1] );
+
+		 cap_hist[i,24] ~ dbern( ICM_U_p * eta_ICL[i,1] );
+
+		 cap_hist[i,25] ~ dbern( ICU_D_p * eta_ICM[i] );
+
+		 cap_hist[i,26] ~ dbern( ICU_U_p * eta_ICM[i] );
+
+		 cap_hist[i,27] ~ dbern( LNF_D_p * eta_ICL[i,2] );
+
+		 cap_hist[i,28] ~ dbern( LNF_U_p * eta_ICL[i,2] );
+
+		 cap_hist[i,29] ~ dbern( MCL_D_p * eta_LWE[i,3] );
+
+		 cap_hist[i,30] ~ dbern( MCL_U_p * eta_LWE[i,3] );
+
+		 cap_hist[i,31] ~ dbern( PES_D_p * eta_LWE[i,4] );
+
+		 cap_hist[i,32] ~ dbern( PES_U_p * eta_LWE[i,4] );
+
+		 cap_hist[i,33] ~ dbern( PEU_D_p * eta_PES[i] );
+
+		 cap_hist[i,34] ~ dbern( PEU_U_p * eta_PES[i] );
+
+		 cap_hist[i,35] ~ dbern( TUM_p * eta_LWE[i,5] );
+
+		 cap_hist[i,36] ~ dbern( CHL_D_p * eta_TUM[i,1] );
+
+		 cap_hist[i,37] ~ dbern( CHL_U_p * eta_TUM[i,1] );
+
+		 cap_hist[i,38] ~ dbern( CHU_D_p * eta_CHL[i] );
+
+		 cap_hist[i,39] ~ dbern( CHU_U_p * eta_CHL[i] );
+
+		 cap_hist[i,40] ~ dbern( CHW_D_p * eta_TUM[i,2] );
+
+		 cap_hist[i,41] ~ dbern( CHW_U_p * eta_TUM[i,2] );
+
+		 cap_hist[i,42] ~ dbern( UWE_p * eta_TUM[i,3] );
+
+		 cap_hist[i,43] ~ dbern( LWN_D_p * eta_UWE[i,1] );
+
+		 cap_hist[i,44] ~ dbern( LWN_U_p * eta_UWE[i,1] );
+
+		 cap_hist[i,45] ~ dbern( NAL_D_p * eta_UWE[i,2] );
+
+		 cap_hist[i,46] ~ dbern( NAL_U_p * eta_UWE[i,2] );
+
+		 cap_hist[i,47] ~ dbern( NAU_D_p * eta_NAL[i] );
+
+		 cap_hist[i,48] ~ dbern( NAU_U_p * eta_NAL[i] );
+
+		 cap_hist[i,49] ~ dbern( WTL_D_p * eta_UWE[i,3] );
+
+		 cap_hist[i,50] ~ dbern( WTL_U_p * eta_UWE[i,3] );
+
+		 cap_hist[i,51] ~ dbern( RRF_p * eta_RIA[i,3] );
+
+		 cap_hist[i,52] ~ dbern( EBO_D_p * eta_RRF[i,1] );
+
+		 cap_hist[i,53] ~ dbern( ENL_D_p * eta_RRF[i,2] );
+
+		 cap_hist[i,54] ~ dbern( ENL_U_p * eta_RRF[i,2] );
+
+		 cap_hist[i,55] ~ dbern( EHL_D_p * eta_ENL[i,1] );
+
+		 cap_hist[i,56] ~ dbern( EHL_U_p * eta_ENL[i,1] );
+
+		 cap_hist[i,57] ~ dbern( ENA_D_p * eta_ENL[i,2] );
+
+		 cap_hist[i,58] ~ dbern( ENA_U_p * eta_ENL[i,2] );
+
+		 cap_hist[i,59] ~ dbern( ENF_D_p * eta_ENA[i] );
+
+		 cap_hist[i,60] ~ dbern( ENF_U_p * eta_ENA[i] );
+
+		 cap_hist[i,61] ~ dbern( MAD_D_p * eta_ENL[i,3] );
+
+		 cap_hist[i,62] ~ dbern( MAD_U_p * eta_ENL[i,3] );
+
+		 cap_hist[i,63] ~ dbern( RCT_D_p * eta_ENL[i,4] );
+
+		 cap_hist[i,64] ~ dbern( RCT_U_p * eta_ENL[i,4] );
+
+		 cap_hist[i,65] ~ dbern( WEA_p * eta_RRF[i,3] );
+
+		 cap_hist[i,66] ~ dbern( FST_p * eta_WEA[i,1] );
+
+		 cap_hist[i,67] ~ dbern( LMR_D_p * eta_WEA[i,2] );
+
+		 cap_hist[i,68] ~ dbern( LMR_U_p * eta_WEA[i,2] );
+
+		 cap_hist[i,69] ~ dbern( GLC_D_p * eta_LMR[i,1] );
+
+		 cap_hist[i,70] ~ dbern( GLC_U_p * eta_LMR[i,1] );
+
+		 cap_hist[i,71] ~ dbern( LBC_D_p * eta_LMR[i,2] );
+
+		 cap_hist[i,72] ~ dbern( LBC_U_p * eta_LMR[i,2] );
+
+		 cap_hist[i,73] ~ dbern( MRC_D_p * eta_LMR[i,3] );
+
+		 cap_hist[i,74] ~ dbern( MRC_U_p * eta_LMR[i,3] );
+
+		 cap_hist[i,75] ~ dbern( BVC_D_p * eta_MRC[i,1] );
+
+		 cap_hist[i,76] ~ dbern( BVC_U_p * eta_MRC[i,1] );
+
+		 cap_hist[i,77] ~ dbern( CRW_D_p * eta_MRC[i,2] );
+
+		 cap_hist[i,78] ~ dbern( CRW_U_p * eta_MRC[i,2] );
+
+		 cap_hist[i,79] ~ dbern( CRU_D_p * eta_CRW[i] );
+
+		 cap_hist[i,80] ~ dbern( CRU_U_p * eta_CRW[i] );
+
+		 cap_hist[i,81] ~ dbern( MRW_D_p * eta_MRC[i,3] );
+
+		 cap_hist[i,82] ~ dbern( MRW_U_p * eta_MRC[i,3] );
+
+		 cap_hist[i,83] ~ dbern( WFC_p * eta_MRW[i] );
+
+		 cap_hist[i,84] ~ dbern( SCP_D_p * eta_MRC[i,4] );
+
+		 cap_hist[i,85] ~ dbern( SCP_U_p * eta_MRC[i,4] );
+
+		 cap_hist[i,86] ~ dbern( TWR_D_p * eta_MRC[i,5] );
+
+		 cap_hist[i,87] ~ dbern( TWR_U_p * eta_MRC[i,5] );
+
+		 cap_hist[i,88] ~ dbern( TWISPW_p * eta_TWR[i] );
+
+		 cap_hist[i,89] ~ dbern( OKL_D_p * eta_WEA[i,3] );
+
+		 cap_hist[i,90] ~ dbern( OKL_U_p * eta_WEA[i,3] );
+
+		 cap_hist[i,91] ~ dbern( AEN_p * eta_OKL[i,1] );
+
+		 cap_hist[i,92] ~ dbern( ANT_D_p * eta_OKL[i,2] );
+
+		 cap_hist[i,93] ~ dbern( ANT_U_p * eta_OKL[i,2] );
+
+		 cap_hist[i,94] ~ dbern( ANR_p * eta_ANT[i] );
+
+		 cap_hist[i,95] ~ dbern( BPC_D_p * eta_OKL[i,3] );
+
+		 cap_hist[i,96] ~ dbern( BPC_U_p * eta_OKL[i,3] );
+
+		 cap_hist[i,97] ~ dbern( JOH_p * eta_OKL[i,4] );
+
+		 cap_hist[i,98] ~ dbern( LLC_D_p * eta_OKL[i,5] );
+
+		 cap_hist[i,99] ~ dbern( LLC_U_p * eta_OKL[i,5] );
+
+		 cap_hist[i,100] ~ dbern( OMK_D_p * eta_OKL[i,6] );
+
+		 cap_hist[i,101] ~ dbern( OMK_U_p * eta_OKL[i,6] );
+
+		 cap_hist[i,102] ~ dbern( OBF_p * eta_OMK[i] );
+
+		 cap_hist[i,103] ~ dbern( OMF_D_p * eta_OBF[i] );
+
+		 cap_hist[i,104] ~ dbern( OMF_U_p * eta_OBF[i] );
+
+		 cap_hist[i,105] ~ dbern( OMH_p * eta_OMF[i] );
+
+		 cap_hist[i,106] ~ dbern( SA1_D_p * eta_OKL[i,7] );
+
+		 cap_hist[i,107] ~ dbern( SA1_U_p * eta_OKL[i,7] );
+
+		 cap_hist[i,108] ~ dbern( SA0_D_p * eta_SA1[i] );
+
+		 cap_hist[i,109] ~ dbern( SA0_U_p * eta_SA1[i] );
+
+		 cap_hist[i,110] ~ dbern( SAD_p * eta_SA0[i] );
+
+		 cap_hist[i,111] ~ dbern( TNK_p * eta_OKL[i,8] );
+
+		 cap_hist[i,112] ~ dbern( WAN_p * eta_OKL[i,9] );
+
+		 cap_hist[i,113] ~ dbern( WHS_p * eta_OKL[i,10] );
+
+		 cap_hist[i,114] ~ dbern( ZSL_D_p * eta_OKL[i,11] );
+
+		 cap_hist[i,115] ~ dbern( ZSL_U_p * eta_OKL[i,11] );
+
+		 cap_hist[i,116] ~ dbern( NMC_D_p * eta_ZSL[i,1] );
+
+		 cap_hist[i,117] ~ dbern( NMC_U_p * eta_ZSL[i,1] );
+
+		 cap_hist[i,118] ~ dbern( OKC_D_p * eta_ZSL[i,2] );
+
+		 cap_hist[i,119] ~ dbern( OKC_U_p * eta_ZSL[i,2] );
+
+		 cap_hist[i,120] ~ dbern( OKM_p * eta_OKC[i,1] );
+
+		 cap_hist[i,121] ~ dbern( OKW_D_p * eta_OKM[i,1] );
+
+		 cap_hist[i,122] ~ dbern( OKW_U_p * eta_OKM[i,1] );
+
+		 cap_hist[i,123] ~ dbern( SKA_D_p * eta_OKM[i,2] );
+
+		 cap_hist[i,124] ~ dbern( SKA_U_p * eta_OKM[i,2] );
+
+		 cap_hist[i,125] ~ dbern( OKP_p * eta_SKA[i,1] );
+
+		 cap_hist[i,126] ~ dbern( OKS_D_p * eta_SKA[i,2] );
+
+		 cap_hist[i,127] ~ dbern( OKS_U_p * eta_SKA[i,2] );
+
+		 cap_hist[i,128] ~ dbern( OKV_D_p * eta_OKC[i,2] );
+
+		 cap_hist[i,129] ~ dbern( OKV_U_p * eta_OKC[i,2] );
+
+		 cap_hist[i,130] ~ dbern( OKI_D_p * eta_ZSL[i,3] );
+
+		 cap_hist[i,131] ~ dbern( OKI_U_p * eta_ZSL[i,3] );
+
+		 cap_hist[i,132] ~ dbern( TON_p * eta_ZSL[i,4] );
+
+		 cap_hist[i,133] ~ dbern( WEH_D_p * eta_RRF[i,4] );
+
+		 cap_hist[i,134] ~ dbern( WEH_U_p * eta_RRF[i,4] );
+
+		 cap_hist[i,135] ~ dbern( RSH_D_p * eta_PRA[i,8] );
+
+		 cap_hist[i,136] ~ dbern( RSH_U_p * eta_PRA[i,8] );
+
+		 cap_hist[i,137] ~ dbern( TMF_p * eta_PRA[i,9] );
+
+	}  # end the n_fish loop 
+}

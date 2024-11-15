@@ -33,7 +33,7 @@ load(here('analysis/data/derived_data',
 
 #-----------------------------------------------------------------
 # set year
-yr = 2023
+yr = 2024
 
 # what dam count to use?
 dam_cnt_name = c("PriestRapids",
@@ -133,9 +133,11 @@ for(yr in 2011:2023) {
   trans_df = compileTransProbs(trans_post,
                                parent_child) |>
     select(-main_branch) |>
-    mutate(origin = recode(origin,
-                           "2" = "H",
-                           "1" = "W"))
+    mutate(across(origin,
+                  ~ case_match(.,
+                               1 ~ "W",
+                               2 ~ "H",
+                               .default = NA_character_)))
 
   # summarize transition probabilities
   trans_summ = summarisePost(trans_df,
@@ -1050,34 +1052,34 @@ for(yr in 2011:2023) {
                 bio_list,
                 mark_grp_list)
 
-  # # save results to be accessed later
-  # save(save_list,
-  #      # detect_summ,
-  #      # trans_summ,
-  #      # escape_summ,
-  #      pop_summ,
-  #      dam_cnt_name,
-  #      # dam_escp_df,
-  #      # configuration,
-  #      # flowlines,
-  #      # parent_child,
-  #      # sites_sf,
-  #      file = here(paste0('analysis/data/derived_data/estimates/', dam_cnt_name),
-  #                  paste0("PRA_DABOM_Steelhead_", yr, ".rda")))
+  # save results to be accessed later
+  save(save_list,
+       # detect_summ,
+       # trans_summ,
+       # escape_summ,
+       pop_summ,
+       dam_cnt_name,
+       # dam_escp_df,
+       # configuration,
+       # flowlines,
+       # parent_child,
+       # sites_sf,
+       file = here(paste0('analysis/data/derived_data/estimates/', dam_cnt_name),
+                   paste0("PRA_DABOM_Steelhead_", yr, ".rda")))
 
-  # excel_file_path = if_else(dam_cnt_name == "PriestRapids",
-  #                           'outgoing/estimates',
-  #                           paste0('outgoing/estimates/', dam_cnt_name, "Cnts"))
-  #
-  # writexl::write_xlsx(x = save_list,
-  #                     path = here(excel_file_path,
-  #                                 paste0('UC_Steelhead_', yr, '_', format(Sys.Date(), '%Y%m%d'), '.xlsx')))
-
-  excel_file_path = "T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/Data Requests/"
+  excel_file_path = if_else(dam_cnt_name == "PriestRapids",
+                            'outgoing/estimates',
+                            paste0('outgoing/estimates/', dam_cnt_name, "Cnts"))
 
   writexl::write_xlsx(x = save_list,
                       path = here(excel_file_path,
-                                  paste0('UC_Steelhead_', yr, '_', format(Sys.Date(), '%Y%m%d'), '4FWS_CCT.xlsx')))
+                                  paste0('UC_Steelhead_', yr, '_', format(Sys.Date(), '%Y%m%d'), '.xlsx')))
+
+  # excel_file_path = "T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/Data Requests/"
+  #
+  # writexl::write_xlsx(x = save_list,
+  #                     path = here(excel_file_path,
+  #                                 paste0('UC_Steelhead_', yr, '_', format(Sys.Date(), '%Y%m%d'), '4FWS_CCT.xlsx')))
 
 }
 

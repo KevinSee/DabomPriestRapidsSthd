@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: clean PTAGIS data with PITcleanr
 # Created: 4/27/20
-# Last Modified: 3/25/24
+# Last Modified: 11/8/24
 # Notes:
 
 # if needed, install development version of packages
@@ -119,6 +119,7 @@ if(nrow(dbl_tag) > 0) {
     distinct()
 }
 
+
 # compress and process those observations with PITcleanr
 prepped_ch <-
   PITcleanr::prepWrapper(cth_file = ptagis_obs,
@@ -155,7 +156,8 @@ prepped_ch |>
   filter(str_detect(path, "OKL")) |>
   select(tag_code) |>
   distinct() |>
-  left_join(prepped_ch) |>
+  left_join(prepped_ch,
+            by = join_by(tag_code)) |>
   writexl::write_xlsx(here('outgoing/PITcleanr',
                            paste0('UC_Steelhead_',
                                   yr,
@@ -165,7 +167,8 @@ prepped_ch |>
   filter(str_detect(path, "OKL")) |>
   select(tag_code) |>
   distinct() |>
-  left_join(prepped_ch) |>
+  left_join(prepped_ch,
+            by = join_by(tag_code)) |>
   writexl::write_xlsx(paste0("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd",
                              "/inputs",
                              "/PITcleanr",

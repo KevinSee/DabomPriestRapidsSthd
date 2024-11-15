@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: prep and run DABOM
 # Created: 4/1/20
-# Last Modified: 4/2/24
+# Last Modified: 11/7/24
 # Notes:
 
 #-----------------------------------------------------------------
@@ -22,9 +22,9 @@ load(here('analysis/data/derived_data/site_config.rda'))
 # Load required DABOM data
 #-----------------------------------------------------------------
 # set year
-yr = 2023
+yr = 2024
 
-for(yr in 2011:2023) {
+# for(yr in 2011:2024) {
   cat(paste("Working on", yr, "\n\n"))
 
   # # load and filter biological data
@@ -32,12 +32,16 @@ for(yr in 2011:2023) {
   #                        'Bio_Data_2011_2022.rds')) %>%
   #   filter(year == yr)
 
-  # load processed detection histories
+  # load processed detection histories & biological data
   load(here('analysis/data/derived_data/PITcleanr',
             paste0('UC_Steelhead_', yr, '.rda')))
 
   # filter to keep only the observations you want to keep
-  filter_obs = prepped_ch |>
+  filter_obs <-
+    prepped_ch |>
+    # drop tags that were put out in the spring during Spring Chinook trapping
+    filter(start_date < ymd(paste(yr, "0101"))) |>
+    # filter based on user_keep_obs, or auto_keep_obs if user_keep_obs is NA
     mutate(across(user_keep_obs,
                   ~ if_else(is.na(.),
                             auto_keep_obs,
@@ -113,7 +117,7 @@ for(yr in 2011:2023) {
   #                          # n.iter = 10)
   #                          n.iter = 5000,
   #                          thin = 10)
-  #
+
 
   #-------------------------------------
   # use jagsUI to run in parallel
@@ -146,7 +150,7 @@ for(yr in 2011:2023) {
                    paste0('PRA_DABOM_Steelhead_', yr,'.rda')))
 
   rm(dabom_mod, jags_data, filter_obs)
-}
+# }
 
 #------------------------------------------------------------------------------
 # diagnostics
