@@ -42,7 +42,7 @@ dam_cnt_name = c("PriestRapids",
 
 #-----------------------------------------------------------------
 # run for set of years
-for(yr in 2011:2023) {
+# for(yr in 2011:2024) {
 
   cat(paste("Working on", yr, "\n\n"))
 
@@ -104,7 +104,8 @@ for(yr in 2011:2023) {
                                      "Start",
                                      "Other")))
 
-  tag_summ %<>%
+  tag_summ <-
+    tag_summ |>
     left_join(brnch_df,
               by = c("final_node" = "node"))
 
@@ -347,6 +348,16 @@ for(yr in 2011:2023) {
                                                          trans_se)^2))) %>%
     ungroup()
 
+  # dam_escp_df |>
+  #   select(year,
+  #          dam,
+  #          win_cnt,
+  #          origin,
+  #          starts_with("priest_cnt")) |>
+  #   group_by(year, dam) |>
+  #   mutate(tot_est = sum(priest_cnt)) |>
+  #   ungroup()
+
 
   for(dam_cnt_name in c("PriestRapids",
                         "RockIsland")) {
@@ -417,7 +428,7 @@ for(yr in 2011:2023) {
                      dam_cnt_name,
                      paste0("UC_Sthd_DABOM_", yr, ".rda")))
   }
-}
+# }
 
 #-----------------------------------------------------------------
 # create some summaries of biological information

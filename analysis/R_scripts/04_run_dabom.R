@@ -39,8 +39,6 @@ yr = 2024
   # filter to keep only the observations you want to keep
   filter_obs <-
     prepped_ch |>
-    # drop tags that were put out in the spring during Spring Chinook trapping
-    filter(start_date < ymd(paste(yr, "0101"))) |>
     # filter based on user_keep_obs, or auto_keep_obs if user_keep_obs is NA
     mutate(across(user_keep_obs,
                   ~ if_else(is.na(.),
@@ -48,6 +46,10 @@ yr = 2024
                             .))) |>
     filter(user_keep_obs)
 
+  # bio_df <-
+  #   bio_df |>
+  #   filter(pit_tag %in% filter_obs$tag_code |
+  #            second_pit_tag %in% filter_obs$tag_code)
 
   # determine origin of each fish
   fish_origin = bio_df %>%

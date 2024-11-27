@@ -55,6 +55,9 @@ ptagis_file = here("analysis/data/raw_data/PTAGIS",
 # recode the PTAGIS observations of double tagged fish so that the tag code matches the TagID (not TagOther)
 ptagis_obs = readCTH(ptagis_file)
 
+# ptagis_obs = readCTH(ptagis_file) |>
+#   filter(tag_code %in% na.omit(union(bio_df$pit_tag, bio_df$second_pit_tag)))
+
 # add some observations from Colockum (CLK), a temporary antenna that only operated in some years
 if(yr %in% c(2015, 2018) ) {
   clk_obs = read_csv(here('analysis/data/raw_data/WDFW/CLK_observations.csv'),
@@ -205,7 +208,8 @@ wdfw_df <-
   mutate(across(c(duration,
                   travel_time),
                 ~ as.difftime(., units = "mins"))) |>
-  filter(!is.na(tag_code))
+  filter(!is.na(tag_code)) |>
+  filter(tag_code %in% unique(prepped_ch$tag_code))
 
 if(!"user_keep_obs" %in% names(wdfw_df)) {
   wdfw_df <-

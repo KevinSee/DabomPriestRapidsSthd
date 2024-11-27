@@ -77,6 +77,7 @@ configuration = org_config %>%
                             site_code == 'ICL' & config_id == 100 ~ "ICL_D",
                             site_code == 'CHIWAC' ~ "CHW_U",
                             site_code == 'CHIWAR' ~ "CHL_U",
+                            site_code == "CWT" ~ "CHL_U",
                             site_code == 'WHITER' ~ "WTL_U",
                             site_code == 'LWENAT' ~ "LWN_U",
                             site_code == 'NASONC' ~ "NAL_U",
@@ -163,6 +164,8 @@ sites_sf = writeOldNetworks()$PriestRapids %>%
   # filter out site at the Methow Fish Hatchery, we're not going to use them
   filter(!site_code %in% c("MSH",
                            "METH")) |>
+  # drop UWE in the upper Wenatchee, as it was removed in 2024
+  filter(!site_code %in% c("UWE")) |>
   # add a few sites in the Okanogan region
   # exclude CHJO because fish detected there have some strange detection histories
   bind_rows(

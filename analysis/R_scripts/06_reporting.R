@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: format results to be saved
 # Created: 11/30/22
-# Last Modified: 11/14/2024
+# Last Modified: 11/21/2024
 # Notes:
 
 #-----------------------------------------------------------------
@@ -69,8 +69,6 @@ spwn_est <-
            spawn_year = 2014:max_yr) |>
   mutate(run_year = spawn_year - 1) %>%
   select(run_year, spawn_year, population) %>%
-  filter(!(population == "Methow" &
-             spawn_year < 2021)) |>
   mutate(results_list = map2(spawn_year,
                              population,
                              .f = possibly(function(yr, pop) {
