@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: format results to be saved
 # Created: 11/30/22
-# Last Modified: 11/21/2024
+# Last Modified: 12/11/2024
 # Notes:
 
 #-----------------------------------------------------------------
@@ -67,6 +67,7 @@ spwn_est <-
   crossing(population = c("Wenatchee",
                           "Methow"),
            spawn_year = 2014:max_yr) |>
+           # spawn_year = 2020) |>
   mutate(run_year = spawn_year - 1) %>%
   select(run_year, spawn_year, population) %>%
   mutate(results_list = map2(spawn_year,
@@ -88,29 +89,15 @@ spwn_est <-
                                   rem_df,
                                   trib_NAs)
 
+                               phos_method = case_when(pop == "Wenatchee" ~ "escapement",
+                                                       pop == "Methow" ~ "tags",
+                                                       .default = NA_character_)
+
                                prep_uc_sthd_data(basin = pop,
                                                  query_year = yr,
                                                  n_observers = "two",
-                                                 phos_data = "escapement",
+                                                 phos_data = phos_method,
                                                  save_rda = F)
-
-
-                               # if(pop == "Wenatchee") {
-                               #   prep_wen_sthd_data(query_year = yr,
-                               #                      n_observers = "two",
-                               #                      phos_data = "escapement",
-                               #                      save_rda = F)
-                               #   escp_est = escp_wen
-                               #   rm(escp_wen)
-                               # } else if(pop == "Methow") {
-                               #   prep_met_sthd_data(query_year = yr,
-                               #                      n_observers = "two",
-                               #                      save_rda = F)
-                               #   escp_est = escp_met
-                               #   rm(escp_met)
-                               # } else {
-                               #   return(NULL)
-                               # }
 
                                # for tributary estimates, make any 0s NAs
                                trib_NAs <-
@@ -134,7 +121,7 @@ spwn_est <-
                                }
 
                                # for 2020, we'll need to do something different
-                               if(yr != 2020) {
+                               if(!(pop == 'Wenatchee' & yr == 2020)) {
 
                                  results_lst <- summarize_redds(redd_df,
                                                                 species = "Steelhead",
@@ -505,10 +492,11 @@ spwn_est <-
                                       spwn_rch = spwn_rch,
                                       redd_spwn_yr = redd_spwn_yr,
                                       spwn_yr = spwn_yr,
-                                      fem_spwn = fem_spwn) %>%
+                                      fem_spwn = fem_spwn,
+                                      basin_tags = basin_tags) %>%
                                    return()
 
-                               } else {
+                               } else if(pop == "Wenatchee" & yr == 2020) {
                                  # data from WDFW (Nate Fuchs' radio telemetry study)
                                  rt_df = tibble(subbasin = "Wenatchee",
                                                 year = rep(2015:2016, each = 2),
@@ -702,11 +690,11 @@ spwn_est <-
                                    mutate(across(river,
                                                  as.factor),
                                           across(river,
-                                                 fct_relevel,
-                                                 c("Wenatchee (mainstem)",
-                                                   "Methow (mainstem)",
-                                                   "Total"),
-                                                 after = Inf)) %>%
+                                                 ~ fct_relevel(.,
+                                                               "Wenatchee (mainstem)",
+                                                               "Methow (mainstem)",
+                                                               "Total",
+                                                               after = Inf))) %>%
                                    arrange(river)
 
 
@@ -806,7 +794,8 @@ spwn_est <-
                                       spwn_rch = NA,
                                       redd_spwn_yr = NA,
                                       spwn_yr = spwn_yr,
-                                      fem_spwn = fem_spwn) %>%
+                                      fem_spwn = fem_spwn,
+                                      basin_tags = basin_tags) %>%
                                    return()
                                }
                              },
@@ -836,6 +825,58 @@ spwn_df <-
           population,
           river) |>
   makeTableNms()
+
+basin_tag_df <-
+  spwn_est %>%
+  mutate(basin_tags = map(results_list,
+                          function(x) {
+                            x[["basin_tags"]] |>
+                              select(-spawn_year)
+                          })) |>
+  select(-results_list) |>
+  unnest(basin_tags)
+
+fpr_df <-
+  spwn_est %>%
+  mutate(fpr = map(results_list,
+                   function(x) {
+                     x[["fpr"]] |>
+                       select(-spawn_year)
+                   })) %>%
+  select(-results_list) %>%
+  unnest(fpr)
+
+# mark_grp_prop <-
+#   fpr_df %>%
+#   select(run_year:population,
+#          location,
+#          # contains("phos"),
+#          n_wild,
+#          n_hor_sn,
+#          n_hor_c) %>%
+#   mutate(n_origin = n_wild + n_hor_sn + n_hor_c,
+#          n_hatch = n_hor_sn + n_hor_c) %>%
+#   pivot_longer(cols = n_wild:n_hor_c,
+#                names_to = "group",
+#                values_to = "n_fish") |>
+#   mutate(prop_all = n_fish / n_origin,
+#          prop_all_se = sqrt((prop_all * (1 - prop_all)) / n_origin),
+#          prop_hatch = case_when(group == "n_wild" ~ 1,
+#                                 .default = n_fish / n_hatch),
+#          prop_hatch_se = sqrt((prop_hatch * (1 - prop_hatch)) / n_hatch)) |>
+#   select(-starts_with("n_")) |>
+#   add_column(origin = NA_character_,
+#              .before = "group") |>
+#   mutate(across(origin,
+#                 ~ case_when(str_detect(group, "wild") ~ "Natural",
+#                             str_detect(group, "hor") ~ "Hatchery",
+#                             .default = .)),
+#          across(group,
+#                 ~ case_match(.,
+#                              "n_wild" ~ "Natural",
+#                              "n_hor_sn" ~ "HOR-SN",
+#                              "n_hor_c" ~ "HOR-C",
+#                              .default = .)))
 
 # for female spawners in the Wenatchee, by origin
 wen_fem <-
@@ -1432,26 +1473,16 @@ mark_tag_summ <-
   select(-dam_cnt_name) |>
   unnest(tag_summ) |>
   filter(!is.na(ad_clip)) |>
-  # mutate(cwt = if_else(is.na(cwt), F,
-  #                      if_else(cwt %in% c("SN", "BD"),
-  #                              T, NA)),
-  #        ad_clip = if_else(is.na(ad_clip) | origin == "W",
-  #                          F,
-  #                          if_else(ad_clip == "AD", T, NA))) |>
-  mutate(ad_clip_chr = recode(as.character(ad_clip),
-                              "TRUE" = "AD",
-                              "FALSE" = "AI"),
-         cwt_chr = recode(as.character(cwt),
-                          "TRUE" = "CWT",
-                          "FALSE" = "noCWT")) |>
   mutate(across(cwt,
                 ~ if_else(origin == "W",
                           F,
                           .)),
-         across(cwt_chr,
-                ~ if_else(origin == "W",
-                          "noCWT",
-                          .))) |>
+         ad_clip_chr = case_when(ad_clip ~ "AD",
+                                 !ad_clip ~ "AI",
+                                 .default = NA_character_),
+         cwt_chr = case_when(origin == "W" ~ "noCWT",
+                             origin == "H" & cwt ~ "CWT",
+                             origin == "H" & !cwt ~ "noCWT")) |>
   tidyr::unite("mark_grp", ad_clip_chr, cwt_chr, remove = T) |>
   mutate(mark_grp = if_else(origin == "W",
                             "Wild",
@@ -1507,6 +1538,13 @@ site_pop_df = buildNodeOrder(parent_child) |>
          site_order = node_order,
          population = group)
 
+# max number of sites
+max_sites <-
+  site_pop_df |>
+  mutate(n_sites = str_count(path, " ") + 1) |>
+  pull(n_sites) |>
+  max()
+
 mark_grp_prop = mark_tag_summ |>
   # mutate(spawn_site = str_remove(spawn_node, "B0$"),
   #        spawn_site = str_remove(spawn_site, "A0$"),
@@ -1519,7 +1557,7 @@ mark_grp_prop = mark_tag_summ |>
                      population,
                      path) |>
               separate(path,
-                       into = paste("site", 1:8, sep = "_")) |>
+                       into = paste("site", 1:max_sites, sep = "_")) |>
               pivot_longer(starts_with('site_'),
                            names_to = "node_order",
                            values_to = "site_code") |>
@@ -1566,16 +1604,13 @@ mark_grp_prop = mark_tag_summ |>
           cwt)
 
 # generate posterior samples of mark proportions
-escape_post2 <- escape_post |>
+post_samp <-
+  escape_post |>
   select(spawn_year,
          post) |>
-  unnest(post) |>
-  group_by(spawn_year) |>
-  mutate(n_iter = max(iter),
-         iter = (chain - 1) * n_iter + iter) |>
-  ungroup()
-n_iter = max(escape_post2$iter)
-
+  unnest(post)
+n_chains = max(post_samp$chain)
+n_iter = max(post_samp$iter)
 
 set.seed(6)
 prop_samps = mark_grp_prop |>
@@ -1588,6 +1623,7 @@ prop_samps = mark_grp_prop |>
                  population,
                  site_code,
                  tot_tags)) |>
+  crossing(chain = 1:n_chains) |>
   mutate(samp = map(data,
                     .f = function(x) {
                       rmultinom(n_iter, sum(x$n_tags), x$prop) |>
@@ -1616,20 +1652,21 @@ prop_samps = mark_grp_prop |>
               filter(tot_tags == 0 |
                        prop == 0 |
                        prop == 1) |>
-              crossing(iter = 1:n_iter) |>
+              crossing(chain = 1:n_chains,
+                       iter = 1:n_iter) |>
               select(-prop_se)) |>
   arrange(spawn_year,
           population,
           site_code,
           iter,
           origin, mark_grp) |>
-  select(iter, any_of(names(mark_grp_prop)))
+  select(chain, iter, any_of(names(mark_grp_prop)))
 
 # posterior samples
-mark_post = escape_post2 |>
-  select(-n_iter) |>
+mark_post = post_samp |>
   inner_join(prop_samps,
              by = c("spawn_year",
+                    "chain",
                     "iter", "origin",
                     "param" = "site_code"),
              multiple = "all") %>%
@@ -1645,24 +1682,17 @@ mark_post = escape_post2 |>
 
 mark_grp_df <-
   mark_post |>
-  group_by(run_year,
-           spawn_year,
-           population,
-           site_code = param,
-           origin,
-           ad_clip,
-           cwt,
-           mark_grp) |>
-  summarise(across(n_fish,
-                   list(mean = mean,
-                        median = median,
-                        se = sd,
-                        skew = moments::skewness,
-                        kurtosis = moments::kurtosis,
-                        lowerCI = ~ coda::HPDinterval(coda::as.mcmc(.x))[,1],
-                        upperCI = ~ coda::HPDinterval(coda::as.mcmc(.x))[,2]),
-                   .names = "{.fn}"),
-            .groups = "drop") |>
+  DABOM::summarisePost(value = n_fish,
+                       run_year,
+                       spawn_year,
+                       population,
+                       origin,
+                       param,
+                       ad_clip,
+                       cwt,
+                       mark_grp) |>
+  rename(site_code = param,
+         se = sd) |>
   left_join(mark_grp_prop |>
               rename(proportion = prop)) |>
   select(population,
@@ -1693,8 +1723,9 @@ mark_grp_df <-
          population:prop_se,
          estimate = median,
          se,
-         lowerCI,
-         upperCI)
+         lowerCI = lower_ci,
+         upperCI = upper_ci)
+
 
 mark_grp_pop_df <-
   mark_grp_df |>
