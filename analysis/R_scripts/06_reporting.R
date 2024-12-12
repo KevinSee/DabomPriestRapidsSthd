@@ -280,6 +280,8 @@ spwn_est <-
                                             hos_uci = qnorm(0.975, hos_est, hos_se),
                                             nos_cv = nos_se / nos_est,
                                             hos_cv = hos_se / hos_est) %>%
+                                     mutate(across(ends_with("lci"),
+                                                   ~ if_else(. < 0, 0, .))) |>
                                      mutate(total_spawners = nos_est + hos_est) |>
                                      mutate(across(river,
                                                    recode,
@@ -825,6 +827,7 @@ spwn_df <-
           population,
           river) |>
   makeTableNms()
+
 
 basin_tag_df <-
   spwn_est %>%
@@ -1595,6 +1598,13 @@ mark_grp_prop = mark_tag_summ |>
          prop = n_tags / tot_tags,
          # using normal approximation
          prop_se = sqrt((prop * (1 - prop))/tot_tags)) |>
+  # if no wild tags detected, still make the proportion 100%
+  mutate(across(prop,
+                ~ case_when(mark_grp == "Wild" & n_tags == 0 ~ 1,
+                            .default = .)),
+         across(prop_se,
+                ~ case_when(mark_grp == "Wild" & n_tags == 0 ~ 0,
+                            .default = .))) |>
   ungroup() |>
   arrange(spawn_year,
           population,
