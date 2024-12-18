@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: format results to be saved
 # Created: 11/30/22
-# Last Modified: 12/11/2024
+# Last Modified: 12/17/2024
 # Notes:
 
 #-----------------------------------------------------------------
@@ -2264,7 +2264,7 @@ write_xlsx(x = save_list,
            path = paste0("T:/DFW-Team FP Upper Columbia Escapement - General/",
                          "UC_Sthd/Estimates/",
                          "UC_STHD_Model_Output",
-                         "_", format(today(), "%Y%m%d"),
+                         # "_", format(today(), "%Y%m%d"),
                          ".xlsx"))
 
 #--------------------------------------------------------------
