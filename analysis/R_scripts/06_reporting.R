@@ -1433,7 +1433,9 @@ size_df <-
                         by = "age") |>
               filter(!is.na(fork_length),
                      !is.na(salt_water)) |>
-              group_by(origin,
+              group_by(run_year,
+                       spawn_year,
+                       origin,
                        salt_water) |>
               summarize(across(fork_length,
                                list(mean = mean,
@@ -1445,15 +1447,24 @@ size_df <-
               add_column(population = "Priest Rapids Tags",
                          .before = 0))
 
-size_tab <- expand(size_df,
-                   nesting(run_year, spawn_year),
-                   population, origin, salt_water_age) |>
+size_tab <-
+  expand(size_df,
+         nesting(run_year, spawn_year),
+         population, origin, salt_water_age) |>
   left_join(size_df,
             by = c("run_year",
                    "spawn_year",
                    "population",
                    "origin",
                    "salt_water_age")) |>
+  mutate(across(population,
+                as.factor),
+         across(population,
+                ~ fct_relevel(.,
+                              "Below Priest",
+                              "Wells Pool",
+                              "Priest Rapids Tags",
+                              after = Inf))) |>
   mutate(across(salt_water_age,
                 ~ paste0("Salt-", .))) |>
   rename(Mean = mean,
@@ -1468,6 +1479,9 @@ size_tab <- expand(size_df,
               values_from = c(Mean, SD, N),
               names_glue = "{salt_water_age}_{.value}",
               names_vary = "slowest") |>
+  arrange(run_year,
+          population,
+          origin) |>
   makeTableNms()
 
 # proportions / escapement of mark groups, by population
