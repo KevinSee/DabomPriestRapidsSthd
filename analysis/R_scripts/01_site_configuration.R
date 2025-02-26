@@ -200,21 +200,6 @@ sites_sf = writeOldNetworks()$PriestRapids %>%
 
 #-----------------------------------------------------------------
 # download the NHDPlus v2 flowlines
-# do you want flowlines downstream of root site? Set to TRUE if you have downstream sites
-dwn_flw = T
-nhd_list = queryFlowlines(sites_sf = sites_sf,
-                          root_site_code = root_site,
-                          min_strm_order = 2,
-                          dwnstrm_sites = dwn_flw,
-                          dwn_min_stream_order_diff = 4)
-
-# compile the upstream and downstream flowlines
-flowlines = nhd_list$flowlines
-if(dwn_flw) {
-  flowlines %<>%
-    rbind(nhd_list$dwn_flowlines)
-}
-
 # upstream extent of study area (cut off areas further upstream)
 upstrm_loc = "Chief Joseph Dam"
 
@@ -225,55 +210,48 @@ upstrm_comid = ggmap::geocode(upstrm_loc, output = "latlon") %>%
            crs = 4326) %>%
   nhdplusTools::discover_nhdplus_id()
 
-nhd_upstrm_lst = nhdplusTools::plot_nhdplus(outlets = list(upstrm_comid),
-                                            streamorder = min(nhd_list$flowlines$StreamOrde),
-                                            actually_plot = F)
+# do you want flowlines downstream of root site? Set to TRUE if you have downstream sites
+dwn_flw = T
+nhd_list = queryFlowlines(sites_sf = sites_sf,
+                          root_site_code = root_site,
+                          min_strm_order = 2,
+                          max_upstream_comid = upstrm_comid,
+                          combine_up_down = dwn_flw)
 
-flowlines %<>%
-  anti_join(nhd_upstrm_lst$flowline %>%
-              st_drop_geometry() %>%
-              select(Hydroseq))
-
+# compile the upstream and downstream flowlines
+flowlines = nhd_list$flowlines
 
 #-----------------------------------------------------------------
 # plot the flowlines and the sites
 ggplot() +
   geom_sf(data = flowlines,
-          aes(color = as.factor(StreamOrde),
-              size = StreamOrde)) +
+          aes(color = as.factor(streamorde),
+              linewidth = streamorde)) +
   scale_color_viridis_d(direction = -1,
                         option = "D",
                         name = "Stream\nOrder",
-                        end = 0.8) +
-  scale_size_continuous(range = c(0.2, 1.2),
-                        guide = 'none') +
-  # geom_sf(data = nhd_list$basin,
-  #         fill = NA,
-  #         lwd = 2) +
-  # # this cuts out parts of the basin upstream of upstrm_loc
-  # geom_sf(data = flowlines %>%
-  #           filter(!Hydroseq %in% nhd_list$dwn_flowlines$Hydroseq) %>%
-  #           summarise(bndry = 'basin') %>%
-  #           select(bndry) %>%
-  #           st_convex_hull(),
-  #         fill = NA,
-  #         lwd = 2) +
+                        end = 0.9) +
+  scale_linewidth_continuous(range = c(0.2, 2),
+                             name = "Stream\nOrder") +
+  geom_sf(data = nhd_list$basin,
+          fill = NA,
+          lwd = 2) +
   geom_sf(data = sites_sf,
-          size = 3,
+          size = 4,
           color = "black") +
-  # geom_sf_label(data = sites_sf,
-  #               size = 1.5,
-  #               aes(label = site_code)) +
-  ggrepel::geom_label_repel(
-    data = sites_sf |>
-      filter(site_code != root_site),
-    aes(label = site_code,
-        geometry = geometry),
-    size = 1.5,
-    stat = "sf_coordinates",
-    min.segment.length = 0,
-    max.overlaps = 100
-  ) +
+  geom_sf_label(data = sites_sf |>
+                  filter(site_code != root_site),
+                aes(label = site_code)) +
+  # ggrepel::geom_label_repel(
+  #   data = sites_sf |>
+  #     filter(site_code != root_site),
+  #   aes(label = site_code,
+  #       geometry = geometry),
+  #   size = 2,
+  #   stat = "sf_coordinates",
+  #   min.segment.length = 0,
+  #   max.overlaps = 100
+  # ) +
   geom_sf_label(data = sites_sf %>%
                   filter(site_code == root_site),
                 aes(label = site_code),
@@ -345,7 +323,7 @@ parent_child %>%
 paths <- buildPaths(parent_child)
 
 test_sites <- paths |>
-  filter(str_detect(path, "LWE")) |>
+  filter(str_detect(path, "OKL")) |>
   pull(end_loc)
 parent_child |>
   filter(parent %in% test_sites |
