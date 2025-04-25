@@ -17,28 +17,33 @@ library(here)
 
 #-----------------------------------------------------------------
 # uses a complete tag history of marks/recaptures at PRD or PRDLD1
+# this is a query set up on Kevin See's PTAGIS account, and finds every steelhead marked or recaptured
+# at Priest Rapids from June 1, 2010 through today
 sthd_tags <-
-  read_csv(here("analysis/data/raw_data",
-                "tagging_recapture",
-                "PriestRapids_Mark_Recapture_2011_2024.csv"),
-                # "PriestRapids_Sthd_SY2011_present.csv"),
-           show_col_types = F) |>
+  read_delim("https://api.ptagis.org/reporting/reports/kevinsee/file/PriestRapids_Sthd_SY2011_present.csv",
+             delim = ",",
+             locale = readr::locale(encoding = "UTF-16LE"),
+             show_col_types = FALSE) |>
   clean_names() |>
-  mutate(across(contains("_date_mm"),
+  rename(tag_code = tag,
+         event_capture_method_code = x5,
+         event_rear_type_code = x14,
+         event_species_name = x16,
+         event_srr_name = x18,
+         event_conditional_comments_name = x20) |>
+  mutate(across(ends_with("_date"),
                 mdy),
-         across(contains("date_time"),
+         across(ends_with("date_time"),
                 mdy_hms)) |>
-  mutate(spawn_year = case_when(!is.na(event_release_date_mmddyyyy) &
-                                  month(event_release_date_mmddyyyy) < 6 ~ year(event_release_date_mmddyyyy),
-                                !is.na(event_release_date_mmddyyyy) &
-                                  month(event_release_date_mmddyyyy) >= 6 ~ year(event_release_date_mmddyyyy) + 1,
-                                is.na(event_release_date_mmddyyyy) &
-                                  month(event_date_mmddyyyy) < 6 ~ year(event_date_mmddyyyy),
-                                is.na(event_release_date_mmddyyyy) &
-                                  month(event_date_mmddyyyy) >= 6 ~ year(event_date_mmddyyyy) + 1,
+  mutate(spawn_year = case_when(!is.na(event_release_date) &
+                                  month(event_release_date) < 6 ~ year(event_release_date),
+                                !is.na(event_release_date) &
+                                  month(event_release_date) >= 6 ~ year(event_release_date) + 1,
+                                is.na(event_release_date) &
+                                  month(event_date) < 6 ~ year(event_date),
+                                is.na(event_release_date) &
+                                  month(event_date) >= 6 ~ year(event_date) + 1,
                                 .default = NA_real_)) |>
-  # filter out one tagging file that is not a WDFW project
-  filter(event_file_name != "CLD14105.WA1") |>
   # grab only tags from the adult ladder
   filter(event_capture_method_code == "LADDER")
 
@@ -51,20 +56,20 @@ sthd_tags <-
 # since Spring Chinook sampling only occurred for 3 years
 sthd_tags <-
   sthd_tags |>
-  filter(!between(month(event_release_date_time_value), 1, 6))
+  filter(!between(month(event_release_date_time), 1, 6))
 
 
 # pull out MRR data about all PIT tags from those MRR files
 all_tags <-
   sthd_tags |>
   select(spawn_year,
-         event_file_name) |>
+         event_file) |>
   distinct() |>
   arrange(spawn_year,
-          event_file_name) |>
-  # filter out one tagging file that is not a WDFW project
-  filter(event_file_name != "CLD14105.WA1") |>
-  mutate(tag_file = map(event_file_name,
+          event_file) |>
+  # # filter out one tagging file that is not a WDFW project
+  # filter(event_file != "CLD14105.WA1") |>
+  mutate(tag_file = map(event_file,
                         .f = function(x) {
                           out <-
                             tryCatch(queryMRRDataFile(x),
@@ -166,7 +171,7 @@ extra_tags |>
   filter(event_type != "Recovery") |>
   select(spawn_year,
          pit_tag,
-         event_file_name) |>
+         event_file) |>
   distinct()
 
 
@@ -229,7 +234,7 @@ bio_df <-
   filter(event_type %in% c("Mark",
                            "Recapture")) |>
   select(spawn_year,
-         event_file_name,
+         event_file,
          pit_tag,
          second_pit_tag,
          event_date,
