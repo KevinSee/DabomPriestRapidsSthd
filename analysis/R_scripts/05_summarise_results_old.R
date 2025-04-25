@@ -33,7 +33,7 @@ load(here('analysis/data/derived_data',
 
 #-----------------------------------------------------------------
 # set year
-yr = 2024
+yr = 2023
 
 # what dam count to use?
 dam_cnt_name = c("PriestRapids",
@@ -42,7 +42,7 @@ dam_cnt_name = c("PriestRapids",
 
 #-----------------------------------------------------------------
 # run for set of years
-# for(yr in 2011:2024) {
+for(yr in 2011:2023) {
 
   cat(paste("Working on", yr, "\n\n"))
 
@@ -61,39 +61,41 @@ dam_cnt_name = c("PriestRapids",
   load(here("analysis/data/derived_data/model_fits",
             paste0('PRA_DABOM_Steelhead_', yr,'.rda')))
 
-  # rename a few columns from bio data
-  bio_df <-
-    bio_df |>
-    rename(tag_code = pit_tag,
+  # read in updated biological data
+  bio_df <- read_rds(here('analysis/data/derived_data',
+                          'Bio_Data_2011_2023.rds')) |>
+    filter(spawn_year == yr) |>
+    rename(tag_code = pit_tag) #|>
+    rename(age = age_scales,
            fork_length = length)
-
-  # # read in updated biological data
-  # bio_df <- read_rds(here('analysis/data/derived_data',
-  #                         'Bio_Data_2011_2023.rds')) |>
-  #   filter(spawn_year == yr) |>
-  #   rename(tag_code = pit_tag) #|>
-  #   # rename(age = age_scales,
-  #   #        fork_length = length)
 
 
   # estimate final spawning location
   tag_summ = summarizeTagData(filter_obs,
-                              bio_df)
+                              bio_df %>%
+                                filter(tag_code %in% unique(filter_obs$tag_code)) %>%
+                                group_by(tag_code) %>%
+                                slice(1) %>%
+                                ungroup())
 
   # look at which branch each tag was assigned to for spawning
   brnch_df = buildNodeOrder(addParentChildNodes(parent_child, configuration)) %>%
-    mutate(group = case_when(node == "PRA" ~ "Start",
-                             str_detect(path, 'LWE') |
-                               node %in% c("CLK") ~ "Wenatchee",
-                             str_detect(path, "ENL") ~ "Entiat",
-                             str_detect(path, "LMR") ~ "Methow",
-                             str_detect(path, "OKL") |
-                               node %in% c("FST") ~ "Okanogan",
-                             str_detect(path, "RIA", negate = T) &
-                               str_detect(path, " ") ~ "BelowPriest",
-                             node == "WEA" ~ "WellsPool",
-                             .default = "Other"
-                             )) |>
+    mutate(group = if_else(node == "PRA",
+                           "Start",
+                           if_else(str_detect(path, 'LWE') | node %in% c("CLK"),
+                                   "Wenatchee",
+                                   if_else(str_detect(path, "ENL"),
+                                           "Entiat",
+                                           if_else(str_detect(path, "LMR"),
+                                                   "Methow",
+                                                   if_else(str_detect(path, "OKL") | node %in% c("FST"),
+                                                           "Okanogan",
+                                                           if_else(str_detect(path, "RIA", negate = T) &
+                                                                     str_detect(path, " "),
+                                                                   "BelowPriest",
+                                                                   if_else(node == "WEA",
+                                                                           "WellsPool",
+                                                                           "Other")))))))) %>%
     mutate(group = factor(group,
                           levels = c("Wenatchee",
                                      "Entiat",
@@ -104,8 +106,7 @@ dam_cnt_name = c("PriestRapids",
                                      "Start",
                                      "Other")))
 
-  tag_summ <-
-    tag_summ |>
+  tag_summ %<>%
     left_join(brnch_df,
               by = c("final_node" = "node"))
 
@@ -122,29 +123,31 @@ dam_cnt_name = c("PriestRapids",
   # look at all the other sites
   detect_summ %>%
     filter(sd > 0) %>%
-    arrange(desc(n_tags))
-    # arrange(desc(sd))
+    # arrange(desc(n_tags))
+    arrange(desc(sd))
 
   # compile all movement probabilities, and multiply them appropriately
-  trans_post = extractTransPost(dabom_mod,
-                                parent_child,
-                                configuration)
-
-
-  trans_df = compileTransProbs(trans_post,
-                               parent_child) |>
-    select(-main_branch) |>
-    mutate(across(origin,
-                  ~ case_match(.,
-                               1 ~ "W",
-                               2 ~ "H",
-                               .default = NA_character_)))
+  trans_df = compileTransProbs(dabom_mod,
+                               parent_child,
+                               configuration) %>%
+    mutate(origin = recode(origin,
+                           "2" = "H",
+                           "1" = "W"))
 
   # summarize transition probabilities
-  trans_summ = summarisePost(trans_df,
-                             value,
-                             param,
-                             origin)
+  trans_summ = trans_df %>%
+    group_by(origin, param) %>%
+    summarise(mean = mean(value),
+              median = median(value),
+              mode = estMode(value),
+              sd = sd(value),
+              skew = moments::skewness(value),
+              kurtosis = moments::kurtosis(value),
+              lowerCI = coda::HPDinterval(coda::as.mcmc(value))[,1],
+              upperCI = coda::HPDinterval(coda::as.mcmc(value))[,2],
+              .groups = "drop") %>%
+    mutate(across(c(mean, median, mode, sd, matches('CI$')),
+                  ~ if_else(. < 0, 0, .)))
 
   #-----------------------------------------------------------------
   # total escapement past Priest, by origin
@@ -201,13 +204,13 @@ dam_cnt_name = c("PriestRapids",
   #----------------------------------------------------------------
   # better way to use upstream dam counts
   # add origin to prepped capture histories
-  # pit_obs = prepped_ch %>%
-  #   left_join(bio_df %>%
-  #               select(tag_code,
-  #                      origin) |>
-  #               distinct()) %>%
-  #   select(tag_code, origin,
-  #          everything())
+  pit_obs = prepped_ch %>%
+    left_join(bio_df %>%
+                select(tag_code,
+                       origin) |>
+                distinct()) %>%
+    select(tag_code, origin,
+           everything())
 
   # get the total dam counts from various dams
   dam_escp_df = tibble(year = yr,
@@ -293,17 +296,17 @@ dam_cnt_name = c("PriestRapids",
     mutate(n_obs = map2_int(pit_code,
                             origin,
                             .f = function(x, y) {
-                              tag_summ %>%
+                              pit_obs %>%
                                 filter(origin == y) %>%
-                                summarize(n_obs = sum(str_detect(tag_detects, x))) %>%
+                                summarize(n_obs = n_distinct(tag_code[node == x])) %>%
                                 pull(n_obs)
                             })) %>%
     mutate(n_upstrm = map2_int(pit_code,
                                origin,
                                .f = function(x, y) {
-                                 tag_summ %>%
+                                 pit_obs %>%
                                    filter(origin == y) %>%
-                                   summarize(n_path = sum(str_detect(path, paste0(" ", x)))) %>%
+                                   summarize(n_path = n_distinct(tag_code[str_detect(path, paste0(" ", x))])) %>%
                                    pull(n_path)
                                }),
            n_upstrm = if_else(dam == "PriestRapids",
@@ -348,16 +351,6 @@ dam_cnt_name = c("PriestRapids",
                                                          trans_se)^2))) %>%
     ungroup()
 
-  # dam_escp_df |>
-  #   select(year,
-  #          dam,
-  #          win_cnt,
-  #          origin,
-  #          starts_with("priest_cnt")) |>
-  #   group_by(year, dam) |>
-  #   mutate(tot_est = sum(priest_cnt)) |>
-  #   ungroup()
-
 
   for(dam_cnt_name in c("PriestRapids",
                         "RockIsland")) {
@@ -375,32 +368,60 @@ dam_cnt_name = c("PriestRapids",
              tot_escp = priest_cnt,
              tot_escp_se = priest_cnt_se)
 
-    # generate MCMC draws of total abundance by origin
-    abund_post <-
-      org_escape |>
-      crossing(chain = 1:max(trans_df$chain)) |>
-      group_by(origin,
-               chain) |>
-      summarise(tot_esc_samp = map2(tot_escp,
-                                    tot_escp_se,
-                                    .f = function(x, y) {
-                                      tibble(tot_abund = rnorm(max(trans_df$iter),
-                                                               mean = x,
-                                                               sd = y)) %>%
-                                        mutate(iter = 1:n())
-                                    }),
-                .groups = "drop") |>
-      unnest(cols = tot_esc_samp)
-
 
     # translate movement estimates to escapement
-    escape_post <- calcAbundPost(trans_df,
-                                 abund_post)
+    escape_post = trans_df %>%
+      left_join(org_escape %>%
+                  group_by(origin) %>%
+                  summarise(tot_esc_samp = map2(tot_escp,
+                                                tot_escp_se,
+                                                .f = function(x, y) {
+                                                  tibble(tot_escp = rnorm(max(trans_df$iter),
+                                                                          mean = x,
+                                                                          sd = y)) %>%
+                                                    mutate(iter = 1:n())
+                                                })) %>%
+                  unnest(cols = tot_esc_samp),
+                by = join_by(iter, origin)) %>%
+      mutate(escp = value * tot_escp)
 
-    escape_summ = summarisePost(escape_post,
-                                abund,
-                                location = param,
-                                origin) %>%
+    # # add all Wenatchee tributaries together
+    # wen_trib_sites <-
+    #   buildPaths(parent_child) |>
+    #   filter(str_detect(path, "LWE"),
+    #          !end_loc %in% c("LWE",
+    #                          "TUM",
+    #                          "UWE")) |>
+    #   filter(str_detect(path, "LWE [:alpha:]+$") |
+    #            str_detect(path, "TUM [:alpha:]+$") |
+    #            str_detect(path, "UWE [:alpha:]+$")) |>
+    #   pull(end_loc)
+    #
+    # escape_post <-
+    #   escape_post |>
+    #   bind_rows(escape_post |>
+    #               dplyr::filter(param %in% wen_trib_sites) |>
+    #               group_by(chain,
+    #                        iter,
+    #                        origin) |>
+    #               summarize(across(escp,
+    #                                sum),
+    #                         param = "All Wen Tribs",
+    #                         .groups = "drop"))
+
+    escape_summ = escape_post %>%
+      group_by(origin, location = param) %>%
+      summarise(mean = mean(escp),
+                median = median(escp),
+                mode = estMode(escp),
+                sd = sd(escp),
+                skew = moments::skewness(escp),
+                kurtosis = moments::kurtosis(escp),
+                lowerCI = coda::HPDinterval(coda::as.mcmc(escp))[,1],
+                upperCI = coda::HPDinterval(coda::as.mcmc(escp))[,2],
+                .groups = 'drop') %>%
+      mutate(across(c(mean, median, mode, sd, matches('CI$')),
+                    ~ if_else(. < 0, 0, .))) %>%
       mutate(across(c(mean, median, mode, sd, skew, kurtosis, matches('CI$')),
                     ~ round(.,
                             digits = 2))) %>%
@@ -428,7 +449,7 @@ dam_cnt_name = c("PriestRapids",
                      dam_cnt_name,
                      paste0("UC_Sthd_DABOM_", yr, ".rda")))
   }
-# }
+}
 
 #-----------------------------------------------------------------
 # create some summaries of biological information
@@ -450,7 +471,7 @@ for(yr in 2011:2023) {
             dam_cnt_name,
             paste0("UC_Sthd_DABOM_", yr, ".rda")))
 
-  bio_summ = pit_obs %>%
+  bio_summ = tag_summ %>%
     group_by(group,
              origin,
              sex,
@@ -459,7 +480,7 @@ for(yr in 2011:2023) {
               mean_FL = mean(fork_length, na.rm = T),
               sd_FL = sd(fork_length, na.rm = T),
               .groups = "drop") %>%
-    full_join(expand(pit_obs,
+    full_join(expand(tag_summ,
                      group,
                      origin,
                      nesting(sex, age))) %>%
@@ -500,14 +521,24 @@ for(yr in 2011:2023) {
                                      "Okanogan",
                                      "BelowPriest"))) %>%
     group_by(chain, iter, origin, param) %>%
-    summarize(across(abund,
+    summarize(across(escp,
                      sum),
               .groups = "drop") %>%
-    summarisePost(abund,
-                  origin,
-                  group = param) %>%
+    group_by(origin, group = param) %>%
+    summarise(mean = mean(escp),
+              median = median(escp),
+              mode = estMode(escp),
+              sd = sd(escp),
+              skew = moments::skewness(escp),
+              kurtosis = moments::kurtosis(escp),
+              lowerCI = coda::HPDinterval(coda::as.mcmc(escp))[,1],
+              upperCI = coda::HPDinterval(coda::as.mcmc(escp))[,2],
+              .groups = 'drop') %>%
+    mutate(across(c(mean, median, mode, sd, matches('CI$')),
+                  ~ if_else(. < 0, 0, .))) %>%
     mutate(across(c(mean, median, mode, sd, skew, kurtosis, matches('CI$')),
-                  ~ round(., digits = 2))) %>%
+                  round,
+                  digits = 2)) %>%
     arrange(desc(origin), group) %>%
     tibble::add_column(species = "Steelhead",
                        spawn_year = yr,
@@ -538,12 +569,12 @@ for(yr in 2011:2023) {
     # filter(group != "WellsPool") %>%
     select(species, spawn_year, group,
            origin, escape = mean, escp_se = sd) %>%
-    left_join(pit_obs %>%
+    left_join(tag_summ %>%
                 group_by(group, origin, sex) %>%
                 summarise(n_tags = n_distinct(tag_code[!is.na(sex)]),
                           .groups = "drop") %>%
                 filter(!is.na(sex)) %>%
-                full_join(expand(pit_obs,
+                full_join(expand(tag_summ,
                                  group,
                                  origin, sex)) %>%
                 mutate(across(n_tags,
@@ -571,7 +602,7 @@ for(yr in 2011:2023) {
     summarize(escape = sum(mean),
               escp_se = sqrt(sum(sd^2)),
               .groups = "drop") %>%
-    left_join(pit_obs %>%
+    left_join(tag_summ %>%
                 group_by(group, sex) %>%
                 summarise(n_tags = n_distinct(tag_code[!is.na(sex)]),
                           .groups = "drop") %>%
@@ -850,15 +881,28 @@ for(yr in 2011:2023) {
     mutate(prop = if_else(value == 0,
                           0,
                           prop)) %>%
-    mutate(n_fish = abund * prop)
+    mutate(n_fish = escp * prop)
 
-  mark_grp_summ = mark_post |>
-    summarisePost(n_fish,
-                  origin,
-                  location = param,
-                  ad_clip,
-                  cwt,
-                  mark_grp) |>
+  mark_grp_summ = mark_post %>%
+    group_by(origin,
+             location = param,
+             ad_clip,
+             cwt,
+             mark_grp) %>%
+    summarise(across(n_fish,
+                     list(mean = mean,
+                          median = median,
+                          mode = estMode,
+                          se = sd,
+                          skew = moments::skewness,
+                          kurtosis = moments::kurtosis,
+                          lowerCI = ~ coda::HPDinterval(coda::as.mcmc(.x))[,1],
+                          upperCI = ~ coda::HPDinterval(coda::as.mcmc(.x))[,2]),
+                     na.rm = T,
+                     .names = "{.fn}"),
+              .groups = "drop") %>%
+    mutate(across(mode,
+                  ~ if_else(. < 0, 0, .))) %>%
     left_join(mark_grp_prop %>%
                 rename(location = site_code,
                        proportion = prop)) %>%
@@ -1063,34 +1107,34 @@ for(yr in 2011:2023) {
                 bio_list,
                 mark_grp_list)
 
-  # save results to be accessed later
-  save(save_list,
-       # detect_summ,
-       # trans_summ,
-       # escape_summ,
-       pop_summ,
-       dam_cnt_name,
-       # dam_escp_df,
-       # configuration,
-       # flowlines,
-       # parent_child,
-       # sites_sf,
-       file = here(paste0('analysis/data/derived_data/estimates/', dam_cnt_name),
-                   paste0("PRA_DABOM_Steelhead_", yr, ".rda")))
+  # # save results to be accessed later
+  # save(save_list,
+  #      # detect_summ,
+  #      # trans_summ,
+  #      # escape_summ,
+  #      pop_summ,
+  #      dam_cnt_name,
+  #      # dam_escp_df,
+  #      # configuration,
+  #      # flowlines,
+  #      # parent_child,
+  #      # sites_sf,
+  #      file = here(paste0('analysis/data/derived_data/estimates/', dam_cnt_name),
+  #                  paste0("PRA_DABOM_Steelhead_", yr, ".rda")))
 
-  excel_file_path = if_else(dam_cnt_name == "PriestRapids",
-                            'outgoing/estimates',
-                            paste0('outgoing/estimates/', dam_cnt_name, "Cnts"))
-
-  writexl::write_xlsx(x = save_list,
-                      path = here(excel_file_path,
-                                  paste0('UC_Steelhead_', yr, '_', format(Sys.Date(), '%Y%m%d'), '.xlsx')))
-
-  # excel_file_path = "T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/Data Requests/"
+  # excel_file_path = if_else(dam_cnt_name == "PriestRapids",
+  #                           'outgoing/estimates',
+  #                           paste0('outgoing/estimates/', dam_cnt_name, "Cnts"))
   #
   # writexl::write_xlsx(x = save_list,
   #                     path = here(excel_file_path,
-  #                                 paste0('UC_Steelhead_', yr, '_', format(Sys.Date(), '%Y%m%d'), '4FWS_CCT.xlsx')))
+  #                                 paste0('UC_Steelhead_', yr, '_', format(Sys.Date(), '%Y%m%d'), '.xlsx')))
+
+  excel_file_path = "T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/Data Requests/"
+
+  writexl::write_xlsx(x = save_list,
+                      path = here(excel_file_path,
+                                  paste0('UC_Steelhead_', yr, '_', format(Sys.Date(), '%Y%m%d'), '4FWS_CCT.xlsx')))
 
 }
 
@@ -1144,7 +1188,7 @@ dam_est = escape_summ %>%
                       "TUM" = "Tumwater"))
 comp_df = dam_est %>%
   group_by(dam) %>%
-  summarize(across(c(mean:mode, ends_with("ci")),
+  summarize(across(c(mean:mode, ends_with("CI")),
                    sum),
             .groups = "drop") %>%
   mutate(origin = "All") %>%
@@ -1152,13 +1196,13 @@ comp_df = dam_est %>%
               select(dam,
                      origin,
                      mean:mode,
-                     ends_with("ci"))) %>%
+                     ends_with("CI"))) %>%
   left_join(dam_cnts) %>%
   rowwise() %>%
   mutate(larger = if_else(win_cnt > mean,
                           "Counts",
                           "DABOM")) %>%
-  mutate(in_ci = between(win_cnt, lower_ci, upper_ci)) %>%
+  mutate(in_ci = between(win_cnt, lowerCI, upperCI)) %>%
   ungroup() %>%
   mutate(dam = fct_relevel(dam,
                            "Tumwater",
@@ -1167,19 +1211,16 @@ comp_df = dam_est %>%
           origin)
 
 # add adjustments if re-ascension rate is the same everywhere as it is at Priest
-comp_df <-
-  comp_df |>
-  left_join(org_escape |>
-              select(origin,
-                     reasc_rate)) |>
+comp_df %<>%
+  add_column(reasc_rate = unique(org_escape$reasc_rate)) %>%
   mutate(adj_win_cnt = win_cnt * (1 - reasc_rate))
 
 comp_df %>%
   ggplot(aes(x = dam,
              y = mean,
              color = "DABOM")) +
-  geom_errorbar(aes(ymin = lower_ci,
-                    ymax = upper_ci),
+  geom_errorbar(aes(ymin = lowerCI,
+                    ymax = upperCI),
                 width = 0) +
   geom_point(size = 3) +
   geom_point(aes(y = win_cnt,
