@@ -253,9 +253,8 @@ filter_obs <-
 all_paths = buildPaths(addParentChildNodes(parent_child,
                                            configuration))
 
-tag_path = summarizeTagData(filter_obs,
-                            bio_df %>%
-                              rename(tag_code = pit_tag)) %>%
+tag_path <-
+  estimateFinalLoc(filter_obs) |>
   select(tag_code, final_node) %>%
   distinct() %>%
   left_join(all_paths,
