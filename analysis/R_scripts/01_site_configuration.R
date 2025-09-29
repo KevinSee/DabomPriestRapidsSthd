@@ -161,6 +161,7 @@ sites_sf = writeOldNetworks()$PriestRapids %>%
                          "BelowJD1" = "JDA")),
          path = str_replace(path, "BelowJD1", "JDA")) %>%
   rename(site_code = SiteID) %>%
+  select(site_code) |>
   # filter out site at the Methow Fish Hatchery, we're not going to use them
   filter(!site_code %in% c("MSH",
                            "METH")) |>
@@ -180,7 +181,14 @@ sites_sf = writeOldNetworks()$PriestRapids %>%
         "OMH",
         "SAD",
         "ANR"))) %>%
-  left_join(configuration) %>%
+  # add a site in the upper Methow
+  bind_rows(
+    tibble(
+      site_code = c("MRU")
+    )
+  ) |>
+  left_join(configuration,
+            by = join_by(site_code)) %>%
   group_by(site_code) %>%
   filter(config_id == max(config_id)) %>%
   ungroup() %>%
@@ -323,7 +331,7 @@ parent_child %>%
 paths <- buildPaths(parent_child)
 
 test_sites <- paths |>
-  filter(str_detect(path, "OKL")) |>
+  filter(str_detect(path, "MRC")) |>
   pull(end_loc)
 parent_child |>
   filter(parent %in% test_sites |
@@ -361,6 +369,16 @@ sites_df = writeOldNetworks()$PriestRapids %>%
                          "BelowJD1" = "JDA")),
          path = str_replace(path, "BelowJD1", "JDA")) %>%
   rename(site_code = SiteID)
+
+# sites_df |>
+#   anti_join(configuration)
+#
+# configuration |>
+#   select(node_site) |>
+#   distinct() |>
+#   anti_join(sites_df,
+#             by = join_by(node_site == site_code))
+
 
 ques_locs = sites_df %>%
   filter(grepl('Wenatchee', path)) %>%
