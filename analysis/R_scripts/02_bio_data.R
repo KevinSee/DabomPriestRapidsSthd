@@ -256,6 +256,10 @@ bio_df <-
                           .)))
 # use release date as the trap date?
 
+# bio_df |>
+#   filter(pit_tag %in% pit_tag[duplicated(pit_tag)]) |>
+#   arrange(pit_tag, event_date, release_date)
+
 
 # deal with fish with second PIT tags, reduce to one row / fish
 two_tag_fish <-
@@ -381,20 +385,46 @@ sthd_tags |>
 
 #-----------------------------------------------------------------
 # add age and final origin data from scales
-# scale_age_file <- "T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/PIT Tag PRD Scale Ages Run Years 2022 to present.xlsx"
+scale_age_files <- c("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/PIT Tag PRD Scale Ages Spawn Years 2011 to 2021.xlsx",
+                     "T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/PIT Tag PRD Scale Ages Run Years 2022 to present.xlsx")
 
-scale_age_file <- "T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/PIT Tag PRD Scale Ages Spawn Years 2011 to present.xlsx"
+# scale_age_file <- "T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/PIT Tag PRD Scale Ages Spawn Years 2011 to present.xlsx"
+
 
 scale_age_df <-
-  tibble(sheet_nm = excel_sheets(scale_age_file)) |>
-  mutate(scale_data = map(sheet_nm,
-                          .f = function(x) {
-                            read_excel(scale_age_file,
-                                       sheet = x) |>
-                              clean_names()
-                          },
-                          .progress = TRUE)) |>
+  tibble(file_nm = scale_age_files) |>
+  mutate(sheet_nm = map(file_nm,
+                        .f = excel_sheets)) |>
+  unnest(sheet_nm) |>
+  mutate(scale_data = map2(file_nm,
+                           sheet_nm,
+                           .f = function(x, y) {
+                             read_excel(x,
+                                        sheet = y) |>
+                               clean_names() |>
+                               mutate(across(scale_cell,
+                                             as.character))
+                           },
+                           .progress = T)) |>
   unnest(scale_data) |>
+  mutate(across(scale_card,
+                ~ case_when(is.na(.) & str_detect(scale_cell, "-") ~ str_split_i(scale_cell, "-", 1),
+                            .default = .)),
+         across(scale_id,
+                ~ case_when(is.na(.) &
+                              !is.na(scale_cell) &
+                              str_detect(scale_cell, "-") ~ scale_cell,
+                            is.na(.) &
+                              str_detect(scale_cell, "-", negate = T) &
+                              !is.na(scale_card) ~ paste(scale_card,
+                                                         scale_cell,
+                                                         sep = "-"),
+                            .default = .)),
+         across(scale_cell,
+                ~ case_when(!is.na(.) &
+                              str_detect(., "-") &
+                              str_detect(scale_id, "-")~ str_split_i(., "-", 2),
+                            .default = .))) |>
   filter(spawn_year %in% unique(bio_df$spawn_year)) |>
   # fix a few typo things in the ages
   mutate(across(age_scales,
@@ -412,20 +442,10 @@ scale_age_df <-
                 ~ if_else(nchar(.) > 10 & !is.na(as.numeric(.)),
                           as.character(round(as.numeric(.), 1)),
                           .))) |>
-  # mutate(scale_id = if_else(!is.na(scale_card),
-  #                           scale_card,
-  #                           scale_cell)) |>
-  mutate(across(scale_id,
-                ~ if_else(!is.na(.),
-                            paste(scale_card,
-                                  scale_cell,
-                                  sep = "-"),
-                          .))) |>
-
   relocate(scale_id,
            .after = "scale_cell") |>
-  select(-scale_card,
-         -scale_cell) |>
+  # select(-scale_card,
+  #        -scale_cell) |>
   rename(age = age_scales) |>
   distinct()
 
@@ -453,25 +473,32 @@ if(nrow(dup_ages) > 0) {
     mutate(n_rec = 1:n()) |>
     ungroup() |>
     pivot_wider(names_from = n_rec,
-                values_from = age) #|>
+                values_from = age) |>
     # filter(`1` != "UNREADABLE",
-    #        `2` != "UNREADABLE")
+    #        `2` != "UNREADABLE") |>
+    mutate(diff_ages = if_else(`1` == `2`, T, F)) |>
+    filter(!diff_ages)
 }
 
 # filter out rows for duplicated tags that have "UNREADABLE" or "NS" (no scales?) ages
 scale_age_df <-
   scale_age_df |>
   mutate(across(age,
-                ~ recode(.,
-                         "NS" = NA_character_,
-                         "UNREADABLE" = NA_character_))) |>
+                ~ case_match(.,
+                             "NS" ~ NA_character_,
+                             "UNREADABLE" ~ NA_character_,
+                             "NA" ~ NA_character_,
+                             .default = .))) |>
   unite(sy_pit,
         spawn_year, primary_pit_tag,
         remove = F) |>
-  filter(!(sy_pit %in% sy_pit[duplicated(sy_pit)] &
-             is.na(age))) |>
-           # age %in% c("UNREADABLE",
-           #            "NS"))) |>
+  filter(!sy_pit %in% sy_pit[duplicated(sy_pit)] |
+           (sy_pit %in% sy_pit[duplicated(sy_pit)] &
+              !is.na(age))) |>
+  # filter(!(sy_pit %in% sy_pit[duplicated(sy_pit)] &
+  #            is.na(age))) |>
+  #          # age %in% c("UNREADABLE",
+  #          #            "NS"))) |>
   # for one tag with multiple ages, choose R.2 or W1.2 (Mike Hughes said so)
   filter(!(primary_pit_tag == "3DD.003D552F68" &
              age == "R.2")) |>
@@ -486,8 +513,8 @@ scale_age_df |>
   arrange(sy_pit)
 
 # differences in PTAGIS file names
-setdiff(unique(scale_age_df$ptagis_file_name), unique(bio_df$event_file_name))
-setdiff(unique(bio_df$event_file_name[bio_df$spawn_year %in% unique(scale_age_df$spawn_year)]),
+setdiff(unique(scale_age_df$ptagis_file_name), unique(bio_df$event_file))
+setdiff(unique(bio_df$event_file[bio_df$spawn_year %in% unique(scale_age_df$spawn_year)]),
         unique(scale_age_df$ptagis_file_name))
 
 # what tags do not have age data associated with them?
@@ -558,18 +585,21 @@ bio_age_df <-
   left_join(scale_age_df |>
               select(spawn_year,
                      pit_tag = primary_pit_tag,
-                     age),
+                     age) |>
+              distinct(),
             by = join_by(spawn_year,
                          pit_tag)) |>
   left_join(scale_age_df |>
               select(spawn_year,
                      second_pit_tag = primary_pit_tag,
-                     age_v2 = age),
+                     age_v2 = age) |>
+              distinct(),
             by = join_by(spawn_year,
                          second_pit_tag)) |>
-  mutate(age = if_else(is.na(age) & !is.na(age_v2),
-                       age_v2,
-                       age)) |>
+  mutate(across(age,
+                ~ case_when(is.na(.) &
+                              !is.na(age_v2) ~ age_v2,
+                            .default = .))) |>
   select(-age_v2)
 
 # any tags with missing ages?
@@ -619,7 +649,7 @@ bio_age_df |>
   arrange(sy_pit) |>
   select(spawn_year,
          pit_tag,
-         event_file_name,
+         event_file,
          release_date,
          # event_date,
          event_type,
@@ -739,7 +769,10 @@ tag_list |>
   filter(spawn_year == max_yr) |>
   pull(data) |>
   extract2(1) |>
-  write_delim(file = here('analysis/data/raw_data/tag_lists',
+  write_delim(file = here("analysis",
+                          "data",
+                          "raw_data",
+                          "tag_lists",
                           paste0('UC_Sthd_Tags_', max_yr, '.txt')),
               delim = '\n',
               col_names = F)
