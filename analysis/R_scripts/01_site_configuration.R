@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Develop configuration file for DABOM
 # Created: 4/1/20
-# Last Modified: 3/25/24
+# Last Modified: 10/6/25
 # Notes:
 #
 # # install some needed packages
@@ -39,7 +39,8 @@ org_config = buildConfig(node_assign = "array",
                          array_suffix = "UD")
 
 # customize some nodes based on DABOM framework
-configuration = org_config %>%
+configuration <-
+  org_config %>%
   # manually add site for Colockum Creek (not in PTAGIS)
   bind_rows(tibble(site_code = 'CLK',
                    config_id = 100,
@@ -118,21 +119,27 @@ configuration = org_config %>%
                             site_code == 'PRO' & site_type == 'INT' ~ 'PRO_D',
                             # grab all sites upstream of Prosser dam, and assign them to PRO_U
                             site_code != "PRO" &
-                              as.integer(stringr::str_split(rkm, '\\.', simplify = T)[,1]) == 539 &
-                              as.integer(stringr::str_split(rkm, '\\.', simplify = T)[,2]) >= 76 ~ "PRO_U",
+                              as.integer(stringr::str_split_i(rkm, '\\.', 1)) == 539 &
+                              as.integer(stringr::str_split_i(rkm, '\\.', 2)) >= 76 ~ "PRO_U",
                             site_code == 'ICH' ~ 'ICH_D',
-                            str_detect(rkm, '522\\.') & rkm_total > 538 ~ 'ICH_U',
+                            site_code != "ICH" &
+                              as.integer(stringr::str_split_i(rkm, '\\.', 1)) == 522 &
+                              rkm_total > 538 ~ 'ICH_U',
                             site_code == 'MDR' ~ 'MDR_D',
-                            site_code %in% c('LWD', 'BGM', 'NBA', 'MCD') ~ 'MDR_U',
+                            site_code != "MDR" &
+                              as.integer(stringr::str_split_i(rkm, '\\.', 1)) == 509 &
+                              as.integer(stringr::str_split_i(rkm, '\\.', 2)) >= 41 ~ "MDR_U",
                             site_code == 'HST' ~ 'HST_D',
-                            site_code %in% c('BBT', 'COP', 'PAT') ~ 'HST_U',
-                            as.integer(stringr::str_split(rkm, '\\.', simplify = T)[,1]) == 351 &
-                              site_code != "JD1" ~ "JD1_U",
+                            site_code != "HST" &
+                              as.integer(stringr::str_split_i(rkm, '\\.', 1)) == 509 &
+                              as.integer(stringr::str_split_i(rkm, '\\.', 2)) == 35 ~ "HST_U",
+                            site_code != "JD1" &
+                              as.integer(stringr::str_split_i(rkm, '\\.', 1)) == 351 ~ "JD1_U",
                             site_code == 'JD1' ~ 'JD1_D',
                             site_code != 'JD1' &
-                              as.integer(stringr::str_split(rkm, '\\.', simplify = T)[,1]) < 351 &
+                              as.integer(stringr::str_split_i(rkm, '\\.', 1)) < 351 &
                               str_detect(site_code, "^COLR", negate = T) ~ 'JDA',
-                            .default = node
+                            .default = .
                             ))) |>
   distinct() %>%
   # correct a couple rkm values
@@ -154,7 +161,9 @@ configuration = org_config %>%
 # Node network for DABOM
 
 # get spatial object of sites used in model
-sites_sf = writeOldNetworks()$PriestRapids %>%
+sites_sf <-
+  writeOldNetworks()$PriestRapids %>%
+  suppressMessages() |>
   mutate(across(c(SiteID,
                   Step3),
                 ~ recode(.,
@@ -241,9 +250,9 @@ ggplot() +
                         end = 0.9) +
   scale_linewidth_continuous(range = c(0.2, 2),
                              name = "Stream\nOrder") +
-  geom_sf(data = nhd_list$basin,
-          fill = NA,
-          lwd = 2) +
+  # geom_sf(data = nhd_list$basin,
+  #         fill = NA,
+  #         lwd = 2) +
   geom_sf(data = sites_sf,
           size = 4,
           color = "black") +
@@ -274,7 +283,8 @@ ggsave(here('analysis/figures',
 
 #-----------------------------------------------------------------
 # build parent child table
-parent_child = sites_sf %>%
+parent_child <-
+  sites_sf %>%
   buildParentChild(flowlines,
                    # rm_na_parent = T,
                    add_rkm = F) %>%
@@ -328,9 +338,11 @@ parent_child %>%
   filter(child %in% child[duplicated(child)])
 
 
-paths <- buildPaths(parent_child)
+paths <-
+  buildPaths(parent_child)
 
-test_sites <- paths |>
+test_sites <-
+  paths |>
   filter(str_detect(path, "MRC")) |>
   pull(end_loc)
 parent_child |>
@@ -339,7 +351,8 @@ parent_child |>
   plotNodes()
 
 # add RKMs from configuration file (since we had to fix at least one from PTAGIS)
-parent_child %<>%
+parent_child <-
+  parent_child |>
   left_join(configuration %>%
               select(parent = site_code,
                      parent_rkm = rkm) %>%
@@ -363,7 +376,9 @@ configuration <-
 
 
 
-sites_df = writeOldNetworks()$PriestRapids %>%
+sites_df <-
+  writeOldNetworks()$PriestRapids %>%
+  suppressMessages() |>
   mutate(across(c(SiteID, Step3),
                 ~ recode(.,
                          "BelowJD1" = "JDA")),
@@ -400,7 +415,7 @@ parent_child %>%
                      org_path = path))
 
 #-----------------------------------------------------------------
-# Save file.
+# Save files
 save(configuration,
      sites_sf,
      flowlines,
@@ -409,7 +424,8 @@ save(configuration,
 
 #-----------------------------------------------------------------
 # pull out configuration info about all sites in the model
-uc_sites <- configuration %>%
+uc_sites <-
+  configuration %>%
   filter(site_code %in% sites_sf$site_code) %>%
   select(node) %>%
   distinct() %>%

@@ -11,10 +11,10 @@ CHL,CHL_D,Lower Chiwawa River,INT,754.077.001
 CHIWAR,CHL_U,Chiwawa River,MRR,754.077
 CHL,CHL_U,Lower Chiwawa River,INT,754.077.001
 CHP,CHL_U,Chiwawa Acc. Pond,INT,754.077.002
+CWT,CHL_U,Chiwawa River Weir Trap Array,INT,754.077.002
 CHM,CHM_D,Chumstick Creek,INT,754.037.000
 CHM,CHM_U,Chumstick Creek,INT,754.037.000
 CHU,CHU_D,Upper Chiwawa River,INT,754.077.012
-CHIKAC,CHU_U,"Chikamin Creek, tributary to Chiwawa River",MRR,754.077.023
 CHU,CHU_U,Upper Chiwawa River,INT,754.077.012
 CHW,CHW_D,Chiwaukum Creek,INT,754.057.000
 CHIWAC,CHW_U,"Chiwaukum Creek, tributary to Wenatchee River",MRR,754.057
@@ -57,6 +57,7 @@ AB1,JDA,Abernathy Creek FWS Tech Cntr.,INT,087.005
 AB2,JDA,Abernathy Creek Farmers Bridge,INT,087.003
 AB3,JDA,Lower Abernathy Creek,INT,087.001
 AB4,JDA,Abernathy Creek Hatch Channel,INT,087.005
+AB5,JDA,Abernathy Creek Concrete Weir,INT,087.005
 ABEH,JDA,Abernathy SCTC,MRR,087.005
 ABERC,JDA,"Abernathy Creek, Lower Columbia River, Washington",MRR,087
 ANTELC,JDA,Antelope Creek - tributary to Trout Creek (TROU2C) in the Deschutes River basin,MRR,328.140.021
@@ -128,7 +129,9 @@ CFDTAL,JDA,CFD - Release into the Tailrace within 0.5 km downstream of Dam,MRR,1
 CFF,JDA,Castile Falls Fishway,INT,290.103
 CGJ,JDA,Cougar Dam PFFC,INT,163.282.090.007
 CGR,JDA,Cougar Dam,MRR,163.282.090.007
+CGRREG,JDA,CGR - Release into the Regulating Channel of the Tailrace within 0.5 km of Dam,MRR,163.282.090.007
 CGRTAL,JDA,CGR - Release into the Tailrace within 0.5 km downstream of Dam,MRR,163.282.090.007
+CGRTUR,JDA,CGR - Release into the Turbine Channel of the Tailrace within 0.5 km of Dam,MRR,163.282.090.007
 CHENC,JDA,"Chenoweth Creek, The Dalles",MRR,300
 CHINOR,JDA,"Chinook River, Washington (Columbia River Estuary)",MRR,006
 CIC,JDA,"Cottonwood Island, Lwr Col Rvr",INT,112
@@ -137,17 +140,6 @@ CLCKMS,JDA,Clackamas River,MRR,163.040
 CLEA3C,JDA,Clear Creek - tributary to Muddy River,MRR,140.087.007
 CLEARP,JDA,Clear Creek Acclimation Pond,MRR,140.087.007.002
 CLRBR,JDA,"Clear Branch, Middle Fork Hood River Watershed",MRR,273.023.015
-COLR,JDA,Columbia River (Archaic - replaced with reach-specific definitions),MRR,000
-COLR1,JDA,"Columbia River - mouth to Three Tree Point, WA (km 0-49)",MRR,000
-COLR10,JDA,Columbia River - East Arrow Park to Revelstoke (km 1359 - 1476),MRR,000
-COLR2,JDA,"Columbia River - Three Tree Point, WA to Lewis River (km 49-140)",MRR,000
-COLR3,JDA,Columbia River - Lewis River to Bonneville Dam (km 140-234),MRR,000
-COLR4,JDA,Columbia River - Bonneville Dam to John Day Dam (km 234-347),MRR,000
-COLR5,JDA,Columbia River - John Day Dam to Snake River (km 347-522),MRR,000
-COLR6,JDA,Columbia River - Snake River to Lower Crab Creek (km 522-661),MRR,000
-COLR7,JDA,"Columbia River - Lower Crab Creek to Chelan Falls, WA (km 661-809)",MRR,000
-COLR8,JDA,"Columbia River - Chelan Falls, WA to Grand Coulee Dam (km 809-960)",MRR,000
-COLR9,JDA,"Columbia River - Grand Coulee Dam to East Arrow Park, CAN (km 960-1359)",MRR,000
 COWEAP,JDA,Coweeman Acclimation Pond,MRR,111.002.021
 COWEER,JDA,"Coweeman River, tributary to Cowlitz River",MRR,111.002
 COWLR1,JDA,Cowlitz River - mouth to Cispus River (km 0-135),MRR,111
@@ -204,12 +196,14 @@ GEECR,JDA,"Gee Creek, Washington, lower Columbia River",MRR,140
 GERMC,JDA,"Germany Creek, Lower Columbia River, Washington",MRR,090
 GM1,JDA,Lower Germany Creek,INT,090.001
 GPD,JDA,Green Peter Dam,MRR,163.174.019.064.009
+GPDTAL,JDA,GPD - Release into the Tailrace within 0.5 km downstream of Dam,MRR,163.174.019.064.009
 GRAYSR,JDA,"Grays River, Washington, lower Columbia River",MRR,032
 GREENR,JDA,"Green River, trib. to NF Toutle River",MRR,111.032.028.018
 GREEPC,JDA,Green Point Creek (tributary to West Fork Hood River),MRR,273.020.002
 HCR,JDA,"Hills Creek Dam, Middle Fork Willamette River",MRR,163.301.073
 HCRFBY,JDA,HCR - Release into the Forebay within 0.5 km upstream of Dam,MRR,163.301.073
 HCRREG,JDA,HCR - Release into the Regulating Channel of the Tailrace within 0.5 km of Dam,MRR,163.301.073
+HCRTAL,JDA,HCR - Release into the Tailrace within 0.5 km downstream of Dam,MRR,163.301.073
 HCRTUR,JDA,HCR - Release into the Turbine Channel of the Tailrace within 0.5 km of Dam,MRR,163.301.073
 HERMAC,JDA,"Herman Creek, Columbia River Gorge (OR)",MRR,243
 HLK,JDA,"Hemlock Dam, Wind River (WA) watershed",MRR,251.017.002
@@ -234,11 +228,13 @@ JDARRR,JDA,JDA - Release below the PIT-Tag Diversion System Gate with subsequent
 JDATAL,JDA,JDA - Release into the Tailrace within 0.5 km downstream of Dam,MRR,347
 JDJ,JDA,John Day Dam Juvenile,INT,347
 JDPI,JDA,Preacher's Island downstream of John Day Dam,MRR,345
-JNSCAS,JDA,"Jones Creek Acc. Site, WF Hood River",MRR,273.020.041
+JNSCAS,JDA,"Jones Creek Acc. Site, WF Hood River",MRR,273.020.022
 JO1,JDA,John Day South Fish Ladder,INT,347
 JO2,JDA,John Day North Fish Ladder,INT,347
+KAL,JDA,Kalama River Instream Array,INT,118.018
 KALA,JDA,"Kalama Falls Hatchery, WDFW",MRR,118.017
 KALAMR,JDA,Kalama River,MRR,118
+KAT,JDA,Kalama River Trap Antenna,INT,118.004
 KLICKR,JDA,Klickitat River,MRR,290
 KLIH,JDA,Klickitat Hatchery,MRR,290.069
 KLR,JDA,Klickitat Riv. Floating Array,INT,290.005
@@ -274,7 +270,9 @@ LMILIS,JDA,"Little Miller Island, Columbia River",MRR,331
 LNSANR,JDA,Little North Santiam River,MRR,163.174.019.044
 LOGCC,JDA,"Logging Camp Creek, Klickitat River",MRR,290.015
 LOP,JDA,"Lookout Point Dam (USACE), MF Willamette River",MRR,163.301.032
+LOPREG,JDA,LOP - Release into the Regulating Channel of the Tailrace within 0.5 km of Dam,MRR,163.301.032
 LOPTAL,JDA,LOP - Release into the Tailrace within 0.5 km downstream of Dam,MRR,163.301.032
+LOPTUR,JDA,LOP - Release into the Turbine Channel of the Tailrace within 0.5 km of Dam,MRR,163.301.032
 LRH,JDA,Lewis River Hatchery Returns,INT,140.025
 LWL,JDA,Ltl. White Salmon NFH returns,INT,261.003
 LWSALR,JDA,Little White Salmon River,MRR,261
@@ -283,6 +281,7 @@ LYLFAT,JDA,"Lyle Falls Adult Fish Trap, Klickitat River",MRR,290.004
 MARI,JDA,Marion Forks Fish Hatchery,MRR,163.174.019.115.001
 MARIOC,JDA,"Marion Creek, tributary to North Santiam River",MRR,163.174.019.115
 MASON,JDA,"Mason Creek, tributary to East Fork Lewis River",MRR,140.006.009
+MCH,JDA,Mayfield Counting House,INT,111.085
 MCKA2C,JDA,"McKay Creek, Crooked River",MRR,328.177.072
 MCKA2P,JDA,"Acclimation Pond on McKay Creek , tributary to Crooked River in the Deschutes River Basin",MRR,328.177.072.000
 MCKE,JDA,McKenzie Hatchery,MRR,163.282.053
@@ -292,6 +291,7 @@ MEG,JDA,Megler Cr.-Col. R. Estuary,INT,013.000
 MEGC,JDA,"Megler Creek, tributary to Columbia River",MRR,013
 METOLR,JDA,Metolius River,MRR,328.177
 MFD,JDA,Mayfield Dam,MRR,111.085
+MFDCHB,JDA,MFD - Mayfield Counting House Juvenile Bypass,MRR,111.085
 MFDFTF,JDA,Mayfield Dam Entrance to Counting House Raceways,MRR,111.085
 MFDLBN,JDA,Mayfield Dam North Louver Bay,MRR,111.085
 MFDLBS,JDA,Mayfield Dam South Louver Bay,MRR,111.085
@@ -326,18 +326,21 @@ NSM,JDA,Minto Dam Ladder N Santiam R,INT,163.174.019.069
 NSS,JDA,North Santiam at Stayton Canal,INT,163.174.019.027
 OCHOCC,JDA,"Ochoco Creek, Crooked River",MRR,328.177.072
 ONTAC,JDA,"Oneonta Creek, Lower Columbia",MRR,222
+OPSH,JDA,DVWD Opal Springs Hatchery ,MRR,328.177.011
 PANT2C,JDA,"Panther Creek (trib. to Wind River, Wash.)",MRR,251.007
 PARK,JDA,Parkdale Hatchery,MRR,273.023.005.000
 PD5,JDA,Columbia River Estuary rkm 62,INT,062
 PD6,JDA,Columbia River Estuary rkm 68,INT,068
 PD7,JDA,Columbia River Estuary rkm 70,INT,070
-PD8,JDA,Columbia River Estuary rkm 82,INT,082
+PD8,JDA,Columbia River Estuary rkm 82,INT,072
+PDO,JDA,Columbia River Rkm 75 OR,INT,075
+PDW,JDA,Columbia River Rkm 75 WA,INT,075
 PEL,JDA,Pelton Dam Ladder - Deschutes,INT,328.161
 PELTON,JDA,Pelton Ladder (Deschutes River) Acclimation Pond,MRR,328.161
 PER,JDA,Pelton Reregulating Dam,MRR,328.161
 PERAFT,JDA,PER - Adult Fish Trap,MRR,328.161
 PERTAL,JDA,PER - Release into the Tailrace within 0.5 km downstream of Dam,MRR,328.161
-PIER3,JDA,"Pier 3 boat yard, Port of Astoria, OR ",MRR,19
+PIER3,JDA,"Pier 3 boat yard, Port of Astoria, OR ",MRR,019
 PINHC,JDA,Pinhead Creek - Clackamas Subbasin,MRR,163.040.109
 PWD,JDA,"Powerdale Dam, Hood River",MRR,273.007
 PWDFBY,JDA,PWD - Release into the Forebay within 0.5 km upstream of Dam,MRR,273.007
@@ -360,7 +363,9 @@ SCAPPC,JDA,Scappoose Creek,MRR,139.003.004
 SCHAFC,JDA,"Schafer Creek, Klickitat River Basin",MRR,290.063.003
 SCL,JDA,Spring Creek NFH Adult Ladder,INT,269
 SERH,JDA,"Sea Resources Hatchery (Chinook River, Washington)",MRR,006.006
+SFC,JDA,Cougar DamTailrace SF McKenzie,INT,163.282.090.007
 SFL,JDA,Shipherd Falls Ladder,INT,251.002
+SFM,JDA,South Fork McKenzie River,INT,163.282.090.016
 SHERFT,JDA,"Sherars Falls Fishway Trap, Deschutes River",MRR,328.071
 SHK,JDA,Shitike Creek PIT Array,INT,328.155.001
 SHP,JDA,Swift Hydroelectric Project,INT,140.070
@@ -430,6 +435,9 @@ WALLIS,JDA,"Wallace Island, lower Columbia River near Clatskanie, OR",MRR,080
 WARMSR,JDA,"Warm Springs River, Deschutes River Watershed",MRR,328.135
 WASHOR,JDA,Washougal River,MRR,193
 WASHWF,JDA,West Fork Washougal River,MRR,193.024
+WF1,JDA,West Fork Hood River - Jones,INT,273.020.023
+WF2,JDA,West Fork Hood River - Bridge,INT,273.020.020
+WF3,JDA,West Fork Hood River - Rehab ,INT,273.020.019
 WFF,JDA,Willamette Falls Fishway,INT,163.043
 WHC,JDA,"Lwr White Creek, Klickitat Bsn",INT,290.063.000
 WHEELC,JDA,"Wheeler Canyon, tributary to Klickitat River",MRR,290.018
@@ -482,6 +490,8 @@ MCL,MCL_D,Lower Mission Creek Instream,INT,754.017.001
 MCL,MCL_U,Lower Mission Creek Instream,INT,754.017.001
 MDR,MDR_D,McDonald Road Bridge,INT,509.041
 MRC,MRC_D,Methow River at Carlton,INT,843.045
+MRU,MRU_D,Upper Methow River Array,INT,843.104
+MRU,MRU_U,Upper Methow River Array,INT,843.104
 MRW,MRW_D,Methow River at Winthrop,INT,843.085
 MRW,MRW_U,Methow River at Winthrop,INT,843.085
 NAL,NAL_D,Lower Nason Creek,INT,754.089.001
@@ -492,8 +502,8 @@ NAU,NAU_U,Upper Nason Creek,INT,754.089.019
 NMC,NMC_D,Ninemile Creek Instream Array,INT,858.134.001
 NMC,NMC_U,Ninemile Creek Instream Array,INT,858.134.001
 OBF,OBF,Omak Creek below Mission Falls,INT,858.052.011
-OKC,OKC_D,Okanagan Channel at VDS-3,INT,858.149
-OKC,OKC_U,Okanagan Channel at VDS-3,INT,858.149
+OKC,OKC_D,Okanagan River at VDS-3,INT,858.149
+OKC,OKC_U,Okanagan River at VDS-3,INT,858.149
 OKI,OKI_D,Inkaneep Creek ,INT,858.139.001
 OKI,OKI_U,Inkaneep Creek ,INT,858.139.001
 OKL,OKL_D,Lower Okanogan Instream Array,INT,858.025
@@ -502,8 +512,8 @@ OKM,OKM,McIntyre Dam,INT,858.166
 OKP,OKP,Penticton Channel PIT Array,INT,858.196
 OKS,OKS_D,Shingle Creek,INT,858.195.001
 OKS,OKS_U,Shingle Creek,INT,858.195.001
-OKV,OKV_D,"Vasuex Creek, BC, Canada",INT,858.163.001
-OKV,OKV_U,"Vasuex Creek, BC, Canada",INT,858.163.001
+OKV,OKV_D,"Vaseux Creek, BC, Canada",INT,858.163.001
+OKV,OKV_U,"Vaseux Creek, BC, Canada",INT,858.163.001
 OKW,OKW_D,Shuttleworth Creek,INT,858.175.001
 OKW,OKW_U,Shuttleworth Creek,INT,858.175.001
 OMF,OMF_D,Omak Creek above Mission Falls,INT,858.052.012
@@ -546,7 +556,6 @@ TUMFBY,TUM,TUM - Release into the Forebay within 0.5 km upstream of Dam,MRR,754.
 TWISPW,TWISPW,Twisp River Weir (WDFW),MRR,843.066.013
 TWR,TWR_D,Lwr Twisp Rvr near MSRF Ponds,INT,843.066.002
 TWR,TWR_U,Lwr Twisp Rvr near MSRF Ponds,INT,843.066.002
-UWE,UWE,Upper Wenatchee River,INT,754.081
 WAN,WAN,Wanacut Creek,INT,858.057.001
 WEA,WEA,"Wells Dam, DCPUD Adult Ladders",INT,830
 WEH,WEH_D,Wells Dam Hatchery,INT,829.001
