@@ -23,12 +23,12 @@ library(here)
 load(here('analysis/data/derived_data/site_config.rda'))
 
 # which spawn year are we dealing with?
-yr = 2024
+yr = 2025
 
 # for(yr in 2011:2023) {
 
 # load and file biological data
-bio_df = read_rds(here('analysis/data/derived_data/Bio_Data_2011_2024.rds')) %>%
+bio_df = read_rds(here('analysis/data/derived_data/Bio_Data_2011_2025.rds')) %>%
   filter(spawn_year == yr)
 
 # any double-tagged fish?
@@ -96,6 +96,36 @@ qcTagHistory(ptagis_obs,
              "PTAGIS",
              ignore_event_vs_release = T)
 
+# most orphan tags are due to double tagging
+orph_tags <-
+  qcTagHistory(ptagis_obs,
+               "PTAGIS",
+               ignore_event_vs_release = T) |>
+  pluck("orphan_tags")
+
+bio_df |>
+  filter(second_pit_tag %in% orph_tags |
+           pit_tag %in% orph_tags) |>
+  as.data.frame()
+
+# ques_tags <-
+#   bio_df |>
+#   filter(second_pit_tag %in% orph_tags |
+#            pit_tag %in% orph_tags) |>
+#   mutate(fish_id = 1:n()) |>
+#   select(fish_id,
+#          contains("pit_tag")) |>
+#   pivot_longer(contains("pit_tag"),
+#                names_to = "source",
+#                values_to = "tag_code")
+#
+# comp_obs <-
+#   compress(ptagis_obs,
+#            configuration = configuration,
+#            ignore_event_vs_release = F,
+#            filter_orphan_disown_tags = FALSE) |>
+#   filter(tag_code %in% ques_tags$tag_code)
+
 # deal with double tagged fish, assign all observations to one tag
 if(nrow(dbl_tag) > 0) {
   ptagis_obs <-
@@ -111,13 +141,11 @@ if(nrow(dbl_tag) > 0) {
                 select(tag_code, use_tag) |>
                 filter(tag_code != use_tag),
               by = "tag_code") %>%
-    rowwise() %>%
-    mutate(tag_code = if_else(!is.na(use_tag) &
+    mutate(across(tag_code,
+                  ~ case_when(!is.na(use_tag) &
                                 !event_site_code_value %in% c("DISOWN",
-                                                              "ORPHAN"),
-                              use_tag,
-                              tag_code)) %>%
-    ungroup() %>%
+                                                              "ORPHAN") ~ use_tag,
+                              .default = .))) |>
     select(-use_tag) %>%
     distinct()
 }
@@ -145,6 +173,67 @@ prepped_ch <-
                                             yr,
                                             ".xlsx"))
 
+# Sort through some tags detected at JDA (or downstream)
+# try to determine which are kelt migrations where we should keep other upstream detections,
+# and which are the only detections after Priest
+jda_tags <-
+  prepped_ch |>
+  filter(node == "JDA",
+         direction == "unknown",
+         min_det < ymd(max_obs_date)) |>
+  select(tag_code) |>
+  distinct() |>
+  left_join(prepped_ch,
+            by = join_by(tag_code)) |>
+  group_by(tag_code) |>
+  summarize(n_dets = n_distinct(node[!node %in% c("PRA", "JDA")]),
+            jda_date = max(min_det[node == "JDA"]),
+            jda_travel = max(travel_time[node == "JDA"]),
+            max_jda_slot = max(slot[node == "JDA"]),
+            .groups = "drop") |>
+  arrange(n_dets,
+          jda_travel)
+units(jda_tags$jda_travel) <- "days"
+
+# when were the JDA detections?
+jda_tags |>
+  arrange(jda_date)
+
+# filter out the JDA detection and re-apply filterDetections
+jda_prepped <-
+  jda_tags |>
+  select(tag_code,
+         max_jda_slot) |>
+  left_join(prepped_ch,
+            by = join_by(tag_code)) |>
+  # filter out the last time a tag was detected at JDA
+  filter(slot != max_jda_slot) |>
+  select(tag_code:start_date,
+         -max_jda_slot) |>
+  filterDetections(parent_child = addParentChildNodes(parent_child,
+                                                      configuration),
+                   max_obs_date = max_obs_date)
+
+
+prepped_ch <-
+  prepped_ch |>
+  left_join(jda_prepped |>
+              rename(new_auto = auto_keep_obs,
+                     new_user = user_keep_obs)) |>
+  mutate(across(auto_keep_obs,
+                ~ case_when(tag_code %in% jda_tags$tag_code &
+                              node != "JDA" ~ new_auto,
+                            tag_code %in% jda_tags$tag_code &
+                              node == "JDA" ~ FALSE,
+                            .default = .)),
+         across(user_keep_obs,
+                ~ case_when(tag_code %in% jda_tags$tag_code &
+                              node != "JDA" ~ new_user,
+                            tag_code %in% jda_tags$tag_code &
+                              node == "JDA" ~ FALSE,
+                            .default = .))) |>
+  select(-starts_with("new_"))
+
 
 # save some stuff
 save(parent_child, configuration, start_date, bio_df, prepped_ch,
@@ -161,7 +250,8 @@ prepped_ch |>
   distinct() |>
   left_join(prepped_ch,
             by = join_by(tag_code)) |>
-  writexl::write_xlsx(here('outgoing/PITcleanr',
+  writexl::write_xlsx(here('outgoing',
+                           'PITcleanr',
                            paste0('UC_Steelhead_',
                                   yr,
                                   '_OKL.xlsx')))
@@ -185,8 +275,32 @@ prepped_ch |>
 # rm(start_date, bio_df, prepped_ch,
 #    ptagis_file,
 #    ptagis_obs,
+#    jda_tags,
 #    dbl_tag)
 # }
+
+prepped_ch |>
+  filter(is.na(user_keep_obs)) |>
+  select(tag_code) |>
+  distinct() |>
+  slice_sample(n = 1) |>
+  left_join(prepped_ch) |>
+  select(tag_code,
+         node:max_det,
+         direction,
+         auto_keep_obs)
+
+prepped_ch |>
+  group_by(tag_code) |>
+  summarize(weird = if_else(sum(direction == "unknown") > 0, T, F),
+            fix = if_else(sum(is.na(user_keep_obs)) > 0, T, F),
+            .groups = "drop") |>
+  summarize(n_tags = n_distinct(tag_code),
+            n_weird = sum(weird),
+            n_fix = sum(fix),
+            perc_weird = n_weird / n_tags,
+            perc_fix = n_fix / n_tags)
+
 
 #-------------------------------------------
 # NEXT STEPS
