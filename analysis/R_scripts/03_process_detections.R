@@ -163,7 +163,7 @@ prepped_ch <-
                          ignore_event_vs_release = F,
                          filter_orphan_disown_tags = FALSE,
                          add_tag_detects = T,
-                         save_file = T,
+                         save_file = F,
                          # file_name = here('outgoing/PITcleanr', paste0('UC_Steelhead_', yr, '.xlsx')))
                          file_name = paste0("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd",
                                             "/inputs",
@@ -209,15 +209,21 @@ jda_prepped <-
   # filter out the last time a tag was detected at JDA
   filter(slot != max_jda_slot) |>
   select(tag_code:start_date,
+         tag_detects,
          -max_jda_slot) |>
   filterDetections(parent_child = addParentChildNodes(parent_child,
                                                       configuration),
-                   max_obs_date = max_obs_date)
+                   max_obs_date = max_obs_date) |>
+  select(all_of(names(prepped_ch)))
 
 
 prepped_ch <-
   prepped_ch |>
   left_join(jda_prepped |>
+              group_by(tag_code) |>
+              mutate(need_fix = case_when(sum(is.na(user_keep_obs)) > 0 ~ T,
+                                          sum(is.na(user_keep_obs)) == 0 ~ F,
+                                          .default = NA)) |>
               rename(new_auto = auto_keep_obs,
                      new_user = user_keep_obs)) |>
   mutate(across(auto_keep_obs,
@@ -230,9 +236,23 @@ prepped_ch <-
                 ~ case_when(tag_code %in% jda_tags$tag_code &
                               node != "JDA" ~ new_user,
                             tag_code %in% jda_tags$tag_code &
+                              !need_fix &
                               node == "JDA" ~ FALSE,
+                            tag_code %in% jda_tags$tag_code &
+                              need_fix &
+                              node == "JDA" ~ new_user,
                             .default = .))) |>
-  select(-starts_with("new_"))
+  select(all_of(names(prepped_ch)))
+
+# overwrite Excel file
+prepped_ch |>
+  writexl::write_xlsx(path = paste0("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd",
+                                    "/inputs",
+                                    "/PITcleanr",
+                                    "/PITcleanr Initial",
+                                    "/UC_Steelhead_",
+                                    yr,
+                                    ".xlsx"))
 
 
 # save some stuff
@@ -279,6 +299,7 @@ prepped_ch |>
 #    dbl_tag)
 # }
 
+# examples of fish detections needing to be looked at
 prepped_ch |>
   filter(is.na(user_keep_obs)) |>
   select(tag_code) |>
@@ -290,6 +311,7 @@ prepped_ch |>
          direction,
          auto_keep_obs)
 
+# how many fish need to be examined?
 prepped_ch |>
   group_by(tag_code) |>
   summarize(weird = if_else(sum(direction == "unknown") > 0, T, F),
@@ -300,6 +322,61 @@ prepped_ch |>
             n_fix = sum(fix),
             perc_weird = n_weird / n_tags,
             perc_fix = n_fix / n_tags)
+
+
+prepped_ch |>
+  group_by(tag_code) |>
+  summarize(weird = if_else(sum(direction == "unknown") > 0, T, F),
+            fix = if_else(sum(is.na(user_keep_obs)) > 0, T, F),
+            .groups = "drop") |>
+  filter(fix,
+         !weird) |>
+  select(tag_code) |>
+  slice_sample(n = 1) |>
+  left_join(prepped_ch) |>
+  select(tag_code,
+         node:max_det,
+         direction,
+         contains("keep_obs"))
+
+# final_loc <-
+#   prepped_ch |>
+#   mutate(across(user_keep_obs,
+#                 ~ case_when(is.na(.) ~ auto_keep_obs,
+#                             .default = .))) |>
+#   estimateFinalLoc() |>
+#   left_join(parent_child |>
+#               addParentChildNodes(configuration = configuration) |>
+#               buildPaths() |>
+#               rename(spwn_path = path),
+#             by = join_by(final_node == end_loc))
+#
+# test <-
+#   prepped_ch |>
+#   filter(is.na(user_keep_obs)) |>
+#   # select(tag_code:min_det,
+#   #        direction,
+#   #        contains("keep_obs")) |>
+#   left_join(final_loc |>
+#               select(tag_code,
+#                      spwn_path)) |>
+#   mutate(keep = case_when(auto_keep_obs ~ T,
+#                           !auto_keep_obs &
+#                             str_detect(spwn_path, node) ~ T,
+#                           .default = F)) |>
+#   group_by(tag_code) |>
+#   mutate(n_rows = n(),
+#          n_keep = sum(keep)) |>
+#   ungroup() |>
+#   mutate(across(user_keep_obs,
+#                 ~ case_when(n_rows == n_keep ~ auto_keep_obs,
+#                             .default = .))) |>
+#   select(all_of(names(prepped_ch)))
+#   # filter(n_rows != n_keep)
+#   filter(tag_code == "3DD.003D4FB5F3") |>
+#   select(-spwn_path) |>
+#   as.data.frame()
+
 
 
 #-------------------------------------------
