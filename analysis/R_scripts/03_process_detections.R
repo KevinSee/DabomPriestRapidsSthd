@@ -385,7 +385,7 @@ prepped_ch |>
 # open that Excel file, and filter on the column user_keep_obs, looking for blanks. Fill in each row with TRUE or FALSE, depending on whether that observation should be kept or not. The column auto_keep_obs provides a suggestion, but the biologist's best expert judgment should be used based on detection dates, detection locations before and after, etc.
 
 # which spawn year are we dealing with?
-yr = 2024
+yr = 2025
 
 load(here('analysis/data/derived_data/PITcleanr',
           paste0('UC_Steelhead_', yr, '.rda')))
