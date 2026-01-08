@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: clean PTAGIS data with PITcleanr
 # Created: 4/27/20
-# Last Modified: 11/8/24
+# Last Modified: 11/25/25
 # Notes:
 
 # if needed, install development version of packages
@@ -220,12 +220,12 @@ jda_prepped <-
 prepped_ch <-
   prepped_ch |>
   left_join(jda_prepped |>
-              group_by(tag_code) |>
-              mutate(need_fix = case_when(sum(is.na(user_keep_obs)) > 0 ~ T,
-                                          sum(is.na(user_keep_obs)) == 0 ~ F,
-                                          .default = NA)) |>
               rename(new_auto = auto_keep_obs,
                      new_user = user_keep_obs)) |>
+  group_by(tag_code) |>
+  mutate(need_fix = case_when(sum(is.na(user_keep_obs)) > 0 ~ T,
+                              sum(is.na(user_keep_obs)) == 0 ~ F,
+                              .default = NA)) |>
   mutate(across(auto_keep_obs,
                 ~ case_when(tag_code %in% jda_tags$tag_code &
                               node != "JDA" ~ new_auto,
@@ -240,8 +240,14 @@ prepped_ch <-
                               node == "JDA" ~ FALSE,
                             tag_code %in% jda_tags$tag_code &
                               need_fix &
-                              node == "JDA" ~ new_user,
+                              node == "JDA" &
+                              !is.na(new_user) ~ new_user,
+                            tag_code %in% jda_tags$tag_code &
+                              need_fix &
+                              node == "JDA" &
+                              is.na(new_user) ~ FALSE,
                             .default = .))) |>
+  ungroup() |>
   select(all_of(names(prepped_ch)))
 
 # overwrite Excel file
@@ -412,6 +418,10 @@ wdfw_df <-
   wdfw_df |>
   select(any_of(names(prepped_ch)))
 
+
+identical(dim(prepped_ch),
+          dim(wdfw_df))
+
 if(! identical(n_distinct(prepped_ch$tag_code),
                n_distinct(wdfw_df$tag_code)) ) {
   cat(paste0("PITcleanr tags: ",
@@ -431,6 +441,53 @@ if(!identical(nrow(wdfw_df),
              nrow(wdfw_df),
              "\n"))
 }
+
+# # pull in calls from Colville Tribes for Okanogan fish
+# okl_df <-
+#   read_excel(paste0("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/PITcleanr/PITcleanr Worksheet Files/",
+#                     "UC_Steelhead_",
+#                     yr,
+#                     "_OKL.xlsx")) |>
+#   mutate(across(c(duration,
+#                   travel_time),
+#                 ~ as.difftime(., units = "mins"))) |>
+#   filter(!is.na(tag_code)) |>
+#   filter(tag_code %in% unique(prepped_ch$tag_code)) |>
+#   select(any_of(names(prepped_ch)))
+#
+# # compare WDFW and Colville calls
+# comp_det <-
+#   okl_df |>
+#   select(tag_code) |>
+#   distinct() |>
+#   left_join(prepped_ch) |>
+#   left_join(wdfw_df |>
+#               select(tag_code,
+#                      node,
+#                      slot,
+#                      wdfw_keep = user_keep_obs)) |>
+#   left_join(okl_df |>
+#               select(tag_code,
+#                      node,
+#                      slot,
+#                      okl_keep = user_keep_obs))
+#
+# # ignoring PRA (sometimes marked FALSE for some reason), examine different calls
+# comp_det |>
+#   filter(node != "PRA") |>
+#   filter(wdfw_keep != okl_keep) |>
+#   select(tag_code) |>
+#   distinct() |>
+#   slice(1) |>
+#   left_join(comp_det) |>
+#   select(tag_code,
+#          node,
+#          min_det,
+#          direction,
+#          contains("keep")) |>
+#   as.data.frame()
+
+# fix WDFW file when necessary, and then re-read it back in
 
 # check if WDFW choices make sense
 filter_obs <-
@@ -538,13 +595,13 @@ save(parent_child, configuration, start_date, bio_df, prepped_ch,
 # tag summaries
 #-----------------------------------------------------------------
 # use auto_keep_obs for the moment
-tag_summ = summarizeTagData(prepped_ch |>
-                              mutate(across(user_keep_obs,
-                                            ~ if_else(is.na(.),
-                                                      auto_keep_obs,
-                                                      .))),
-                            bio_df %>%
-                              rename(tag_code = pit_tag))
+tag_summ <-
+  summarizeTagData(prepped_ch |>
+                     mutate(across(user_keep_obs,
+                                   ~ case_when(is.na(.) ~ auto_keep_obs,
+                                               .default = .))),
+                   bio_df %>%
+                     rename(tag_code = pit_tag))
 
 # any duplicated tags?
 sum(duplicated(tag_summ$tag_code))
