@@ -290,6 +290,7 @@ for(i in 1:nrow(two_tag_fish)) {
 }
 
 # which record to keep for each fish?
+# keep mark event tag, or first release date
 two_tag_keep <-
   two_tag_fish |>
   nest(.by = fish_id) |>
@@ -392,7 +393,12 @@ scale_age_files <- c("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd
 
 
 scale_age_df <-
-  tibble(file_nm = scale_age_files) |>
+  # tibble(file_nm = scale_age_files) |>
+  tibble(folder = "T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data") |>
+  mutate(file_name = map(folder, .f = list.files)) |>
+  unnest(file_name) |>
+  filter(str_detect(file_name, "Scale Ages")) |>
+  unite(file_nm, folder, file_name, sep = "/") |>
   mutate(sheet_nm = map(file_nm,
                         .f = excel_sheets)) |>
   unnest(sheet_nm) |>
@@ -564,6 +570,11 @@ bio_df |>
 
 # what age data is associated with a tag not in our sample?
 scale_age_df |>
+  filter(!(primary_pit_tag %in% bio_df$pit_tag |
+             primary_pit_tag %in% bio_df$second_pit_tag)) |>
+  tabyl(spawn_year)
+
+scale_age_df |>
   filter(primary_pit_tag %in% na.omit(bio_df$second_pit_tag)) |>
   select(spawn_year,
          primary_pit_tag,
@@ -720,6 +731,202 @@ bio_final_df |>
 
 summary(bio_final_df)
 colSums(is.na(bio_final_df))
+
+#-----------------------------------------------------------------
+# read in genetics data, starting with SY2025
+gen_df <-
+  read_excel("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/Sex and Origin PRD-Brood Comparison Data/Genetics_PBT_GSI/AppendixI_OmyPRD2024(Jul01-Oct31).xlsx",
+             sheet = "PBT_GSI",
+             skip = 1) |>
+  clean_names() |>
+  rename(probability_gsi_1 = probability_19,
+         gsi_assignment_2 = x2nd_best_estimate,
+         probability_gsi_2 = probability_22,
+         gsi_assignment_3 = x3rd_best_estimate,
+         probability_gsi_3 = probability_24,
+         byrne_statwk = byrn_estatwk,
+         pit_tag = pit_tag_number,
+         gen_rear = rear) |>
+  # drop any row with no PIT tag number
+  filter(!is.na(pit_tag)) |>
+  # flip any PIT tag that's marked as the "secondary" PIT tag in the bio data
+  left_join(bio_final_df |>
+              select(primary_pit_tag = pit_tag,
+                     second_pit_tag),
+            by = join_by(pit_tag == second_pit_tag)) |>
+  mutate(across(pit_tag,
+                ~ case_when(is.na(primary_pit_tag) ~ .,
+                             !is.na(primary_pit_tag) ~ primary_pit_tag,
+                            .default = .))) |>
+  select(-primary_pit_tag)
+
+bio_comp <-
+  bio_final_df |>
+  # filter(spawn_year == 2025) |>
+  mutate(snub_dorsal = str_detect(conditional_comments, "DF")) |>
+  select(spawn_year,
+         pit_tag,
+         species_run_rear_type,
+         origin_bio = origin,
+         sex_field = sex,
+         cwt,
+         ad_clip,
+         snub_dorsal,
+         age,
+         conditional_comments) |>
+  left_join(scale_age_df |>
+              select(spawn_year,
+                     pit_tag = primary_pit_tag,
+                     origin_field,
+                     origin_scales,
+                     origin_sc_final = origin_final),
+            by = join_by(spawn_year,
+                         pit_tag)) |>
+  left_join(gen_df |>
+              mutate(spawn_year = sample_year + 1) |>
+              # filter(sample_year >= 2024) |>
+              select(spawn_year,
+                     pit_tag,
+                     sex_gen = genetic_sex,
+                     origin_gen = gen_rear,
+                     assignment_method,
+                     popname,
+                     observed_gsi_assignment,
+                     probability_gsi_1),
+            by = join_by(spawn_year,
+                         pit_tag)) |>
+  mutate(origin_final = case_when(ad_clip ~ "H",
+                                  assignment_method == "PBT" ~ "H",
+                                  origin_scales == "H" ~ "H",
+                                  assignment_method == "GSI" &
+                                    origin_scales == "W" ~ "W",
+                                  origin_scales == "W" ~ "W",
+                                  is.na(origin_scales) &
+                                    (cwt | snub_dorsal) ~ "H",
+                                  assignment_method != "PBT" &
+                                    !ad_clip &
+                                    !cwt &
+                                    !snub_dorsal &
+                                    is.na(origin_scales) ~ "W",
+                                  .default = origin_bio),
+         across(origin_final,
+                ~ case_when(. == "H" & !ad_clip ~ "HNC",
+                            .default = .))) |>
+  relocate(origin_final,
+           .after = origin_gen)
+
+bio_comp |>
+  filter(spawn_year == 2025) |>
+  tabyl(origin_bio,
+        origin_final)
+
+bio_comp |>
+  filter(spawn_year == 2025) |>
+  tabyl(sex_gen,
+        sex_field) |>
+  adorn_totals("both") |>
+  adorn_percentages() |>
+  adorn_pct_formatting()
+
+list("Sex change" =
+
+       bio_comp |>
+       filter(spawn_year == 2025) |>
+       filter(sex_field != sex_gen,
+              sex_gen != "Unknown") |>
+       select(pit_tag,
+              conditional_comments,
+              starts_with("sex")) |>
+       mutate(to_do = "change sex in PTAGIS"),
+
+     "Origin change" =
+
+       bio_comp |>
+       filter(spawn_year == 2025) |>
+       filter(origin_bio == "W",
+              origin_final == "HNC") |>
+       select(pit_tag,
+              cwt,
+              ad_clip,
+              snub_dorsal,
+              age,
+              origin_ptagis = origin_bio,
+              origin_field,
+              origin_scales,
+              origin_gen,
+              origin_final,
+              assignment_method) |>
+       mutate(reason = case_when(assignment_method == "PBT" ~ "PBT assignment",
+                                 assignment_method == "GSI" &
+                                   origin_scales == "H" ~ "Scale read",
+                                 .default = NA_character_)) |>
+       mutate(to_do = "change origin in PTAGIS")
+) #|>
+  # write_xlsx("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/Sex and Origin PRD-Brood Comparison Data/Genetics_PBT_GSI/PTAGIS_changes_2025.xlsx")
+
+
+# bio_comp |>
+#   filter(origin_final != origin_gen) |>
+#   arrange(desc(assignment_method),
+#           origin_final,
+#           origin_gen,
+#           snub_dorsal,
+#           age,
+#           origin_scales) |>
+#   select(-starts_with("sex"),
+#          -origin_bio,
+#          -origin_sc_final,
+#          -species_run_rear_type) |>
+#   write_csv("O:Desktop/PRD2025_genetic_origin_comparison.csv")
+
+
+
+bio_comp |>
+  mutate(across(origin_final,
+                ~ case_match(.,
+                             "HNC" ~ "H",
+                             .default = .))) |>
+  filter(origin_final != origin_bio) |>
+  filter(origin_final != origin_sc_final) |>
+  tabyl(spawn_year)
+
+
+# bio_final_df <-
+#   bio_final_df |>
+#   left_join(bio_comp |>
+#               filter(spawn_year >= 2025) |>
+#               mutate(across(origin_final,
+#                             ~ case_match(.,
+#                                          "HNC" ~ "H",
+#                                          .default = .))) |>
+#               select(spawn_year,
+#                      pit_tag,
+#                      origin_final),
+#             by = join_by(spawn_year,
+#                          pit_tag)) |>
+#   mutate(across(origin,
+#                 ~ case_when(!is.na(origin_final) ~ origin_final,
+#                             .default = .))) |>
+#   select(-origin_final)
+
+#-----------------------------------------------------------------
+# add selected genetic data where available
+#-----------------------------------------------------------------
+bio_final_df <-
+  bio_final_df |>
+  left_join(gen_df |>
+              mutate(spawn_year = 2025) |>
+              select(spawn_year,
+                     pit_tag,
+                     assignment_method,
+                     popname,
+                     gsi_assignment = observed_gsi_assignment,
+                     gsi_prob = probability_gsi_1) |>
+              distinct(),
+            by = join_by(spawn_year,
+                         pit_tag))
+
+
 
 #-----------------------------------------------------------------
 # save as Excel file
