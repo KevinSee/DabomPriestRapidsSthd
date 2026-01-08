@@ -189,7 +189,8 @@ sites_sf <-
         "OKP",
         "OMH",
         "SAD",
-        "ANR"))) %>%
+        "ANR",
+        "LLF"))) %>%
   # add a site in the upper Methow
   bind_rows(
     tibble(
