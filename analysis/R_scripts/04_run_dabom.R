@@ -22,7 +22,7 @@ load(here('analysis/data/derived_data/site_config.rda'))
 # Load required DABOM data
 #-----------------------------------------------------------------
 # set year
-yr = 2024
+yr = 2025
 
 # for(yr in 2011:2024) {
   cat(paste("Working on", yr, "\n\n"))
@@ -41,9 +41,8 @@ yr = 2024
     prepped_ch |>
     # filter based on user_keep_obs, or auto_keep_obs if user_keep_obs is NA
     mutate(across(user_keep_obs,
-                  ~ if_else(is.na(.),
-                            auto_keep_obs,
-                            .))) |>
+                  ~ case_when(is.na(.) ~ auto_keep_obs,
+                            .default = .))) |>
     filter(user_keep_obs)
 
   # bio_df <-

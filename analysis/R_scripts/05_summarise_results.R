@@ -33,12 +33,12 @@ load(here('analysis/data/derived_data',
 
 #-----------------------------------------------------------------
 # set year
-yr = 2024
+yr = 2025
 
 # what dam count to use?
 dam_cnt_name = c("PriestRapids",
                  "RockIsland",
-                 "RockyReach")[2]
+                 "RockyReach")[1]
 
 #-----------------------------------------------------------------
 # run for set of years
@@ -68,12 +68,14 @@ dam_cnt_name = c("PriestRapids",
            fork_length = length)
 
   # # read in updated biological data
-  # bio_df <- read_rds(here('analysis/data/derived_data',
-  #                         'Bio_Data_2011_2023.rds')) |>
+  # bio_df <-
+  #   read_rds(here('analysis/data/derived_data',
+  #                 'Bio_Data_2011_2025.rds')) |>
   #   filter(spawn_year == yr) |>
-  #   rename(tag_code = pit_tag) #|>
-  #   # rename(age = age_scales,
-  #   #        fork_length = length)
+  #   rename(tag_code = pit_tag,
+  #          fork_length = length) #|>
+  # # rename(age = age_scales,
+  # #        fork_length = length)
 
 
   # estimate final spawning location
@@ -210,16 +212,17 @@ dam_cnt_name = c("PriestRapids",
   #          everything())
 
   # get the total dam counts from various dams
-  dam_escp_df = tibble(year = yr,
-                       dam = as_factor(c("PriestRapids",
-                                         "RockIsland")),
-                       # "RockyReach"),
-                       dam_code = c("PRD",
-                                    "RIS"),
-                       # "RRH"),
-                       pit_code = c("PRA",
-                                    "RIA")) %>%
-                                    # "RRF")) %>%
+  dam_escp_df <-
+    tibble(year = yr,
+           dam = as_factor(c("PriestRapids",
+                             "RockIsland")),
+           # "RockyReach"),
+           dam_code = c("PRD",
+                        "RIS"),
+           # "RRH"),
+           pit_code = c("PRA",
+                        "RIA")) %>%
+    # "RRF")) %>%
     rowwise() %>%
     mutate(win_cnt = map_dbl(dam_code,
                              .f = function(x) {
