@@ -1,0 +1,1093 @@
+---
+title: "Steelhead Overshoot and Fallback Rates"
+subtitle: "Upper Columbia SY2025"
+author:
+  - name: Kevin See
+    affliation-ref: wdfw
+    corresponding: true
+    email: Kevin.See@dfw.wa.gov
+affliations:
+  - id: wdfw
+    name: Washington Department of Fish & Wildlife
+    city: Olympia
+    state: WA
+date: "today"
+format: 
+  html:
+    theme: pulse
+    fig-height: 6
+    fig-width: 6
+    toc: true
+  pdf: 
+    fig-height: 6
+    fig-width: 6
+    toc: true
+    include-in-header: "../templates/header_WDFW.tex"
+  docx:
+    fig-height: 6
+    fig-width: 6
+    toc: false
+    prefer-html: true
+    reference-doc: "../templates/WDFW Report Template.docx"
+bibliography: references.bib
+csl: ../templates/american-fisheries-society.csl
+---
+
+```{r setup, echo = FALSE, message=F, warning=F}
+library(knitr)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  echo = FALSE,
+  comment = "#>",
+  fig.path = "figures/",
+  dpi = 300
+)
+```
+
+```{r packages}
+# load these packages
+library(tidyverse)
+library(here)
+library(STADEM)
+library(DABOM)
+library(lubridate)
+library(janitor)
+# library(msm)
+library(sroem)
+library(readxl)
+library(english)
+library(colorspace)
+library(flextable)
+
+theme_set(theme_bw())
+
+# flextable default settings
+set_flextable_defaults(theme_fun = theme_vanilla,
+                       big.mark = ",",
+                       na_str = "-",
+                       nan_str = "-",
+                       # font.family = "Times",
+                       font.size = 10,
+                       float = "float")
+
+
+```
+
+```{r genetic-data}
+# set year
+yr = 2025
+
+# all detections
+load(here('analysis/data/derived_data/PITcleanr',
+            paste0('UC_Steelhead_', yr, '.rda')))
+
+# read in full genetic summary data
+gen_df <-
+    read_excel("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/Sex and Origin PRD-Brood Comparison Data/Genetics_PBT_GSI/AppendixI_OmyPRD2024(Jul01-Oct31).xlsx",
+             sheet = "PBT_GSI",
+             skip = 1) |>
+  clean_names() |>
+  rename(probability_gsi_1 = probability_19,
+         gsi_assignment_2 = x2nd_best_estimate,
+         probability_gsi_2 = probability_22,
+         gsi_assignment_3 = x3rd_best_estimate,
+         probability_gsi_3 = probability_24,
+         byrne_statwk = byrn_estatwk,
+         pit_tag = pit_tag_number,
+         gen_rear = rear) |>
+  # drop any row with no PIT tag number
+  filter(!is.na(pit_tag)) |>
+  # flip any PIT tag that's marked as the "secondary" PIT tag in the bio data
+  left_join(bio_df |>
+              select(primary_pit_tag = pit_tag,
+                     second_pit_tag),
+            by = join_by(pit_tag == second_pit_tag)) |>
+  mutate(across(pit_tag,
+                ~ case_when(is.na(primary_pit_tag) ~ .,
+                             !is.na(primary_pit_tag) ~ primary_pit_tag,
+                            .default = .))) |>
+  select(-primary_pit_tag)
+
+```
+
+```{r load-data}
+# tag summary
+tag_summ <-
+  query_dabom_results(query_year = yr,
+                      result_type = "tag_summ") |>
+    left_join(gen_df |> 
+              select(tag_code = pit_tag,
+                     hatchery_byname,
+                     by),
+            by = join_by(tag_code)) |> 
+  mutate(across(origin,
+                ~ case_match(.,
+                             "W" ~ "NOR",
+                             "H" ~ "HOR",
+                             .default = .))) |> 
+  mutate(ovrst = case_when(str_detect(gsi_assignment,
+                                      "UPPCOL") &
+                             origin == "NOR" ~ F,
+                           str_detect(gsi_assignment,
+                                      "UPPCOL",
+                                      negate = T) &
+                             origin == "NOR" ~ T,
+                           origin == "HOR" &
+                             hatchery_byname %in% c("OmyEAST",
+                                                    "OmyWELL",
+                                                    "OmyWMET",
+                                                    "OmyWOKA",
+                                                    "OmyWOMA",
+                                                    "OmyWINT") ~ F,
+                           origin == "HOR" &
+                             !hatchery_byname %in% c("OmyEAST",
+                                                     "OmyWELL",
+                                                     "OmyWMET",
+                                                     "OmyWOKA",
+                                                     "OmyWOMA",
+                                                     "OmyWINT") ~ T,
+                           .default = NA)) |> 
+  mutate(uc_hatch_grp = case_when(origin == "H" &
+                                    !ovrst &
+                                    hatchery_byname == "OmyEAST" ~ "Wenatchee",
+                                  origin == "H" &
+                                    !ovrst &
+                                    hatchery_byname == "OmyWINT" ~ "Methow",
+                                  origin == "H" &
+                                    !ovrst &
+                                    hatchery_byname == c("OmyWELL") ~ "Wells",
+                                  origin == "H" &
+                                    !ovrst &
+                                    hatchery_byname %in% c("OmyWMET",
+                                                           "OmyWOKA",
+                                                           "OmyWOMA") ~ "Other",
+                                  .default = NA_character_))
+
+tag_summ <-
+  tag_summ |> 
+  filter(!is.na(ovrst))
+
+# tag_summ |>
+#   tabyl(origin, ovrst) |>
+#   adorn_totals(where = c("row", "col")) |> 
+#   adorn_percentages() |>
+#   adorn_pct_formatting()
+```
+
+```{r tag-rate}
+tag_rate <-
+  query_dabom_results(dabom_dam_nm = "RockIsland",
+                      query_year = yr,
+                      result_type = "dam_summ") |> 
+  filter(dam == "RockIsland") |> 
+  select(year, 
+         dam,
+         origin,
+         priest_cnt,
+         priest_cnt_se) |> 
+  mutate(across(origin,
+                ~ case_match(.,
+                             "W" ~ "NOR",
+                             "H" ~ "HOR",
+                             .default = .))) |> 
+  left_join(tag_summ |> 
+              count(origin,
+                    name = "n_tags"),
+            by = join_by(origin)) |> 
+  mutate(tag_rate = n_tags / priest_cnt,
+         tag_rate_se = n_tags / priest_cnt^2 * priest_cnt_se)
+
+```
+
+```{r}
+all_dets <-
+  tag_summ |> 
+  select(tag_code,
+         origin,
+         ovrst,
+         group) |> 
+  left_join(prepped_ch, 
+            by = join_by(tag_code))
+
+# furtherst upstream dam reached by overshoot fish
+ovrst_tags <-
+  all_dets |> 
+  filter(ovrst) |> 
+  group_by(tag_code,
+           origin) |> 
+  summarize(det_PRA = if_else(sum(str_detect(path, "PRA")) > 0, T, F),
+            det_RIA = if_else(sum(str_detect(path, "RIA")) > 0, T, F),
+            det_RRF = if_else(sum(str_detect(path, "RRF")) > 0, T, F),
+            det_WEA = if_else(sum(str_detect(path, "WEA")) > 0, T, F),
+            n_dams = det_PRA + det_RIA + det_RRF + det_WEA,
+            .groups = "drop") |>
+  mutate(ovrst_dam = case_when(det_PRA & !det_RIA ~ "Priest Rapids",
+                                det_RIA & !det_RRF ~ "Rock Island",
+                                det_RRF & !det_WEA ~ "Rocky Reach",
+                                det_WEA ~ "Wells"),
+         across(ovrst_dam,
+                ~ fct_reorder(.,
+                              n_dams))) |> 
+  select(-starts_with("det_")) |> 
+  left_join(tag_summ |> 
+              select(tag_code,
+                     final_node,
+                     node_group = group),
+            by = join_by(tag_code))
+
+ovrst_dams <-
+  tibble(dam_code = as_factor(c("PRA",
+                                "RIA",
+                                "RRF",
+                                "WEA")),
+         dam = case_match(dam_code,
+                          "PRA" ~ "Priest Rapids",
+                          "RIA" ~ "Rock Island",
+                          "RRF" ~ "Rocky Reach",
+                          "WEA" ~ "Wells",
+                          .default = NA_character_)) |>
+  mutate(across(dam,
+                ~ factor(., levels = levels(ovrst_tags$ovrst_dam)))) |> 
+  mutate(tag_cnts = map(dam_code,
+                        .f = function(dam_code) {
+                          all_dets |> 
+                            group_by(origin,
+                                    ovrst) |> 
+                           summarize(n_tags = n_distinct(tag_code[str_detect(path, as.character(dam_code))]),
+                                     .groups = "drop")
+                       })) |> 
+  unnest(tag_cnts) |> 
+  left_join(tag_rate |> 
+              select(origin,
+                     contains("tag_rate")),
+            by = join_by(origin)) |> 
+  mutate(abund = n_tags / tag_rate,
+         abund_se = n_tags * tag_rate_se / tag_rate^2)
+
+ovrst_last_dam <-
+  ovrst_tags |> 
+  group_by(origin, ovrst_dam) |> 
+  summarize(n_tags = n_distinct(tag_code), 
+            .groups = "drop") |> 
+  left_join(tag_rate |> 
+              select(origin,
+                     contains("tag_rate")),
+            by = join_by(origin)) |> 
+  mutate(abund = n_tags / tag_rate,
+           abund_se = n_tags * tag_rate_se / tag_rate^2)
+
+```
+
+```{r}
+flbk_prop <-
+  ovrst_tags |> 
+  count(ovrst_dam,
+        origin,
+        node_group,
+        name = "n_tags") |> 
+  group_by(ovrst_dam,
+           origin) |> 
+  mutate(tot_tags = sum(n_tags),
+         prop = n_tags / tot_tags,
+         prop_se = sqrt((prop * (1 - prop)) / tot_tags),
+         prop_lci = qnorm(0.025, prop, prop_se),
+         prop_uci = qnorm(0.975, prop, prop_se),
+         across(c(prop_lci,
+                  prop_uci),
+                ~ case_when(. < 0 ~ 0,
+                            . > 1 ~ 1,
+                            .default = .))) |> 
+  ungroup() |> 
+  filter(node_group == "BelowPriest")
+```
+
+```{r yakima-only}
+yak_ovrst_dams <-
+  tibble(dam_code = as_factor(c("PRA",
+                                "RIA",
+                                "RRF",
+                                "WEA")),
+         dam = case_match(dam_code,
+                          "PRA" ~ "Priest Rapids",
+                          "RIA" ~ "Rock Island",
+                          "RRF" ~ "Rocky Reach",
+                          "WEA" ~ "Wells",
+                          .default = NA_character_)) |>
+  mutate(across(dam,
+                ~ factor(., levels = levels(ovrst_tags$ovrst_dam)))) |> 
+  mutate(tag_cnts = map(dam_code,
+                        .f = function(dam_code) {
+                          all_dets |> 
+                            left_join(tag_summ |> 
+                                        select(tag_code,
+                                               gsi_assignment),
+                                      by = join_by(tag_code)) |> 
+                            filter(origin == "NOR",
+                                   str_detect(gsi_assignment, "YAKIMA")) |> 
+                            group_by(origin,
+                                     ovrst) |> 
+                            summarize(n_tags = n_distinct(tag_code[str_detect(path, as.character(dam_code))]),
+                                      .groups = "drop")
+                        })) |> 
+  unnest(tag_cnts) |> 
+  left_join(tag_rate |> 
+              select(origin,
+                     contains("tag_rate")),
+            by = join_by(origin)) |> 
+  mutate(abund = n_tags / tag_rate,
+         abund_se = n_tags * tag_rate_se / tag_rate^2)
+
+yak_flbk_prop <-
+  ovrst_tags |>
+  left_join(tag_summ |> 
+              select(tag_code,
+                     gsi_assignment),
+            by = join_by(tag_code)) |> 
+  filter(origin == "NOR",
+         str_detect(gsi_assignment, "YAKIMA")) |> 
+  mutate(in_yakima = case_when(str_detect(final_node, "PRO") ~ T,
+                               .default = F)) |> 
+  group_by(ovrst_dam,
+           origin) |> 
+  summarize(tot_tags = n_distinct(tag_code),
+            yak_tags = n_distinct(tag_code[in_yakima]),
+            other_flbk = n_distinct(tag_code[!in_yakima & node_group == "BelowPriest"]),
+            .groups = "drop") |> 
+  mutate(prop = (yak_tags + other_flbk) / tot_tags,
+         prop_se = sqrt((prop * (1 - prop)) / tot_tags),
+         prop_lci = qnorm(0.025, prop, prop_se),
+         prop_uci = qnorm(0.975, prop, prop_se),
+         across(c(prop_lci,
+                  prop_uci),
+                ~ case_when(. < 0 ~ 0,
+                            . > 1 ~ 1,
+                            .default = .)))
+```
+
+```{r, eval = F}
+wells_rrf <-
+  tag_summ |> 
+  filter(hatchery_byname == "OmyWELL") |> 
+  select(tag_code,
+         origin) |> 
+  left_join(prepped_ch,
+            by = join_by(tag_code)) |> 
+  filter(str_detect(path, "RRF")) |> 
+  select(tag_code) |> 
+  distinct() |> 
+  left_join(tag_summ,
+            by = join_by(tag_code)) |> 
+  mutate(final_det = case_when(final_node == "FST" ~ "Foster Creek",
+                               final_node == "RRF" ~ "Rocky Reach Dam",
+                               str_detect(final_node, "WEH") ~ "Wells Hatchery",
+                               str_detect(final_node, "EBO") ~ "East Bank Hatchery",
+                               .default = group),
+         across(final_det,
+                ~ case_match(.,
+                             "WellsPool" ~ "Wells Pool",
+                             .default = .)))
+
+# wells_rrf |> 
+#   tabyl(final_node,
+#         final_det,
+#         show_missing_levels = FALSE)
+# 
+# wells_rrf |> 
+#   filter(str_detect(final_node, "RSH")) |> 
+#   slice(1) |> 
+#   select(tag_code) |> 
+#   left_join(prepped_ch) |> 
+#   select(node:max_det, user_keep_obs) |> 
+#   as.data.frame()
+  
+
+```
+
+```{r}
+wells_rrf <-
+  tag_summ |> 
+  filter(hatchery_byname %in% c(#"OmyEAST",
+                                "OmyWELL",
+                                "OmyWMET",
+                                "OmyWOKA",
+                                "OmyWOMA",
+                                "OmyWINT")) |> 
+  select(tag_code,
+         hatchery_byname,
+         origin) |> 
+  left_join(prepped_ch,
+            by = join_by(tag_code)) |> 
+  filter(str_detect(path, "RRF")) |> 
+  select(tag_code,
+         hatchery_byname) |> 
+  distinct() |> 
+  left_join(tag_summ,
+            by = join_by(tag_code,
+                         hatchery_byname)) |> 
+  mutate(final_det = case_when(final_node == "FST" ~ "Foster Creek",
+                               final_node == "RRF" ~ "Rocky Reach Dam",
+                               str_detect(final_node, "WEH") ~ "Wells Hatchery",
+                               str_detect(final_node, "EBO") ~ "East Bank Hatchery",
+                               .default = group),
+         across(final_det,
+                ~ case_match(.,
+                             "WellsPool" ~ "Wells Pool",
+                             .default = .)))
+
+```
+
+
+```{r}
+eb_ria <-
+  tag_summ |> 
+  filter(hatchery_byname == "OmyEAST") |> 
+  select(tag_code,
+         origin) |> 
+  left_join(prepped_ch,
+            by = join_by(tag_code)) |> 
+  filter(str_detect(path, "RIA")) |> 
+  select(tag_code) |> 
+  distinct() |> 
+  left_join(tag_summ,
+            by = join_by(tag_code)) |> 
+  mutate(final_det = case_when(final_node == "FST" ~ "Foster Creek",
+                               final_node == "RRF" ~ "Rocky Reach Dam",
+                               final_node == "RIA" ~ "Rock Island Dam",
+                               str_detect(final_node, "WEH") ~ "Wells Hatchery",
+                               str_detect(final_node, "EBO") ~ "East Bank Hatchery",
+                               .default = group),
+         across(final_det,
+                ~ case_match(.,
+                             "WellsPool" ~ "Wells Pool",
+                             .default = .)))
+```
+
+
+# Introduction and Objectives
+
+WDFW has been trapping and PIT tagging hatchery and wild adult steelhead at Priest Rapids Dam and using the subsequent PIT tag detections to estimate escapement and abundance to various locations around the Upper Columbia since 2011 [@Waterhouse2020]. In spawn year 2025, CRITFC analyzed genetic samples of these fish and determined either the broodstock of hatchery-origin fish through parentage-based tagging (PBT), or genetic stock identification (GSI) for natural-origin fish. We used that information to look at movement patterns of fish who originated from outside the Upper Columbia basin.
+
+Overshoots are defined as fish that move upstream, past their natal tributary, during their freshwater migration. Some of these overshoot fish may eventually fallback to their natal basin, while others may stray into an upstream basin, or perish somewhere in the mainstem. We initially focused on fish identified as out-of-basin fish (through PBT or GSI) that were detected at Priest Rapids Dam and could therefore be considered an overshoot into the Upper Columbia. For natural-origin fish, GSI cannot identify differences between Upper Columbia populations, only differences between Upper Columbia fish and those from outside the Upper Columbia, which does not allow us to examine any within-basin overshooting of natural origin steelhead (e.g., Wenatachee steelhead overshooting past Rocky Reach Dam). In this report, we examine several overshoot-related questions:
+
+1. What is the abundance of out-of-basin overshoot steelhead, by origin, at each of the Upper Columbia dams with PIT tag detection infrastructure (i.e. Priest Rapids, Rock Island, Rocky Reach and Wells)? 
+1. Of those fish that overshoot past each dam in the Upper Columbia, what percentage are eventually detected downstream of Priest Rapids Dam (i.e., what percent fallback)? 
+1. Of the hatchery fish from broodstock at Wells Hatchery or further upstream, where was their final detection, especially those fish that crossed Rocky Reach Dam?
+1. Of the fish from East Bank Hatchery broodstock, where was their final detection, especially those fish that crossed Rock Island Dam?
+
+# Data and Methods
+
+In SY2025, `r prettyNum(nrow(tag_summ), big.mark = ",")` adult steelhead were PIT tagged or recaptured at Priest Rapids Dam (@tbl-tags). As the trap at that location was run consistently throughout the run season, we consider these fish a random and representative sample of the run at large. Natural-origin fish were identified as non-Upper Columbia fish overshooting past Priest Rapids Dam if their GSI assignment was *not* `UPPCOL`. For hatchery-origin fish, if PBT identified a fish's hatchery group as anything other than OmyEAST, OmyWELL, OmyWMET, OmyWOKA, OmyWOMA, or OmyWINT, including unassigned, they were considered an overshoot fish. Due to sample size limitations, we did not divide Upper Columbia overshoots into smaller groups (e.g., Snake River, or specific hatchery), but treated them as a homogeneous group in terms of their behavior within the Upper Columbia. Four fish failed to produce a PBT or GSI result, and were excluded from the analysis. 
+
+```{r}
+#| label: tbl-tags
+#| tbl-cap: Number of tags (and percentages) from sampling at Priest Rapids Dam and whether they were identified at sampling as an overshoot into the Upper Columbia or not, by origin. 
+
+tag_summ |> 
+  tabyl(ovrst,
+        origin) |> 
+  adorn_totals(where = c("row", "col")) |> 
+  pivot_longer(-ovrst,
+               values_to = "n_fish") |> 
+  left_join(tag_summ |> 
+              tabyl(ovrst,
+                    origin) |> 
+              adorn_totals(where = c("row", "col")) |> 
+              adorn_percentages(denominator = "col") |>
+              adorn_pct_formatting() |> 
+              pivot_longer(-ovrst,
+                           values_to = "perc"),
+            by = join_by(ovrst,
+                         name)) |> 
+  mutate(prnt_val = paste0(prettyNum(n_fish, big.mark = ","),
+                           " (",
+                           perc,
+                           ")")) |> 
+  select(-c(n_fish, perc)) |> 
+  pivot_wider(values_from = prnt_val) |> 
+    rename(Overshoot = ovrst) |>
+  flextable() |> 
+  autofit()
+  
+```
+
+# Analysis
+
+We estimated abundance of overshoot fish at each mainstem dam by calculating the number of tags in our sample detected at, or upstream, of each dam, and then dividing that number of tags by the estimated tag rate at Priest Rapids Dam (@tbl-tag-rate). This tag rate was calculated by dividing teh known number of tags in our sample by an estimate of unique steelhead crossing Priest Rapids Dam. For the last several years, to estimate steelhead crossing Priest Rapids Dam we start with the window counts at Rock Island Dam, then accounting for re-ascending fish who were counted more than once by using PIT tags to estimate a re-ascension rate. By multiplying the total window counts by one minus the re-ascension rate we estimated the number of unique steelhead passing Rock Island Dam. We then estimated how many unique steelhead crossed Priest Rapids Dam by dividing the estimate at Rock Island Dam by the transition probability between Priest Rapids Dam and Rock Island, which comes out of the overall Upper Columbia steelhead escapement analysis, described by @Waterhouse2020. 
+
+```{r}
+#| label: tbl-tag-rate
+#| tbl-cap: Table displaying the estimate of the number of unique steelhead, by origin, crossing Priest Rapids Dam, with standard error, the number of tags in our sample and the calculated tag rate, with standard error.
+
+tag_rate |> 
+  rename(unique_sthd = priest_cnt,
+         unique_sd = priest_cnt_se) |> 
+  select(-dam) |> 
+  mutate(across(year,
+                as.factor)) |> 
+  clean_names("title") |> 
+  rlang::set_names(nm = function(x) {
+    x |> 
+      str_replace("Se", "SE") |> 
+      str_replace("Sd", "SE") 
+  }) |> 
+  flextable() |> 
+  colformat_double(j = 3,
+                   digits = 0) |> 
+  colformat_double(j = 4,
+                   digits = 1) |> 
+  colformat_double(j = 6,
+                   digits = 3) |> 
+  colformat_double(j = 7,
+                   digits = 4) |> 
+  autofit()
+```
+
+Once we'd determined the furthest upstream dam each overshoot fish had crossed, we calculated what proportion of those fish (at each dam) had a detection somewhere below Priest Rapids Dam, and we assumed those fish had successfully fallen back. Because the GSI groups are fairly large spatially, we did not examine exactly what basin each fish's last detection was in and compare that to their GSI (or PBT) designation. Such as analysis could be undertaken, but once the furthest upstream overshoot dam is also considered, the sample sizes of tags become quite small. 
+
+## Wells and East Bank Hatchery Fish
+
+We focused on two particular groups of hatchery fish from within the Upper Columbia: those from broodstock collected at or upstream of Wells Dam (PBT assignments of `OmyWELL` `OmyWMET`, `OmyWINT`, `OmyWOKA` or `OmyWOMA`) and those from broodstock at East Bank Hatchery (PBT assignment of `OmyEAST`). For broodstock from Wells Dam or upstream, we concentrated on those tags detected crossing Rocky Reach Dam, and examined their final upstream PIT tag detection. For fish from East Bank hatchery, we started with tags detected crossing Rock Island Dam and performed a similar analysis. 
+
+# Results
+
+## Overshoot and Fallback
+
+@tbl-flbk summarizes the abundance, by origin, of adult steelhead that have overshot into the Upper Columbia according to the furthest upstream overshoot dam, as well as the number that fallback to a tributary below Priest Rapids Dam and that percentage of fallback. @tbl-flbk-yak provides a similar summary, but focused only on those natural-origin steelhead that originated from the Yakima River and were detected falling back into the Yakima. 
+
+```{r}
+#| label: tbl-flbk
+#| tbl-cap: Abundance (standard error) of adult steelhead, by origin, that overshoot into the Upper Columbia, the number estimated to fallback to a tributary somewhere downstream of Priest Rapids Dam, and the percent of fallback success. Fish are broken out by the furthest Upper Columbia dam they are detected overshooting past, but all fallback must be downstream of Priest Rapids Dam. 
+
+flbk_tab <- 
+  ovrst_last_dam |> 
+  # select(-starts_with("tag_rate")) |> 
+  select(ovrst_dam,
+         origin,
+         contains("abund")) |> 
+  left_join(flbk_prop |> 
+              select(ovrst_dam,
+                     origin,
+                     starts_with("prop")),
+            by = join_by(ovrst_dam,
+                         origin)) |> 
+  mutate(flbk = abund * prop,
+         flbk_se = sqrt(((abund_se^2 + abund^2) * (prop_se^2 + prop^2)) - (abund * prop)^2 )) |> 
+  mutate(overshoot = paste0(prettyNum(round_half_up(abund), big.mark = ","), 
+                           " (",
+                           prettyNum(round_half_up(abund_se, 1), big.mark = ","),
+                           ")"),
+         fallback = paste0(prettyNum(round_half_up(flbk), big.mark = ","), 
+                           " (",
+                           prettyNum(round_half_up(flbk_se, 1), big.mark = ","),
+                           ")"),
+         percent = flbk / abund * 100)
+
+flbk_tab |> 
+  bind_rows(flbk_tab |> 
+              group_by(origin) |> 
+              summarize(across(c(abund,
+                                 flbk),
+                               sum),
+                        across(c(abund_se,
+                                 flbk_se),
+                               ~ sqrt(sum(.^2))),
+                        .groups = "drop") |> 
+              mutate(ovrst_dam = "Total",
+                     overshoot = paste0(prettyNum(round_half_up(abund), big.mark = ","), 
+                                        " (",
+                                        prettyNum(round_half_up(abund_se, 1), big.mark = ","),
+                                        ")"),
+                     fallback = paste0(prettyNum(round_half_up(flbk), big.mark = ","), 
+                                       " (",
+                                       prettyNum(round_half_up(flbk_se, 1), big.mark = ","),
+                                       ")"),
+                     percent = flbk / abund * 100)) |> 
+  mutate(across(ovrst_dam,
+                ~ fct_relevel(.,
+                              "Total",
+                              after = Inf))) |> 
+  mutate(across(percent,
+                ~ round(., 1))) |>
+  select(origin,
+         ovrst_dam,
+         overshoot,
+         fallback,
+         percent) |> 
+  arrange(origin,
+          ovrst_dam) |> 
+  relocate(origin,
+           .before = 0) |>
+  rename(last_overshoot_dam = ovrst_dam) |> 
+  clean_names("title") |> 
+  flextable() |> 
+  merge_v(j = 1) |> 
+  bold(i = c(5, 10), bold = TRUE) |> 
+  autofit()
+  
+```
+
+```{r}
+#| label: tbl-flbk-yak
+#| tbl-cap: Abundance (standard error) of adult natural-origin steelhead, originating from the Yakima watershed, that overshoot into the Upper Columbia, the number estimated to fallback into the Yakima, and the percent of fallback success. Fish are broken out by the furthest Upper Columbia dam they are detected overshooting past, but all fallback must be within the Yakima basin. 
+
+yak_flbk_tab <-
+  yak_ovrst_dams |> 
+  select(ovrst_dam = dam,
+         origin,
+         contains("abund")) |> 
+  left_join(yak_flbk_prop |> 
+              select(ovrst_dam,
+                     origin,
+                     starts_with("prop")),
+            by = join_by(ovrst_dam,
+                         origin)) |> 
+  mutate(flbk = abund * prop,
+         flbk_se = sqrt(((abund_se^2 + abund^2) * (prop_se^2 + prop^2)) - (abund * prop)^2 )) |>
+  mutate(across(starts_with("flbk"),
+                ~ replace_na(., 0))) |> 
+  mutate(overshoot = paste0(prettyNum(round_half_up(abund), big.mark = ","), 
+                           " (",
+                           prettyNum(round_half_up(abund_se, 1), big.mark = ","),
+                           ")"),
+         fallback = paste0(prettyNum(round_half_up(flbk), big.mark = ","), 
+                           " (",
+                           prettyNum(round_half_up(flbk_se, 1), big.mark = ","),
+                           ")"),
+         percent = flbk / abund * 100)
+
+yak_flbk_tab |> 
+  bind_rows(yak_flbk_tab |> 
+              group_by(origin) |> 
+              summarize(across(c(abund,
+                                 flbk),
+                               sum),
+                        across(c(abund_se,
+                                 flbk_se),
+                               ~ sqrt(sum(.^2))),
+                        .groups = "drop") |> 
+              mutate(ovrst_dam = "Total",
+                     overshoot = paste0(prettyNum(round_half_up(abund), big.mark = ","), 
+                                        " (",
+                                        prettyNum(round_half_up(abund_se, 1), big.mark = ","),
+                                        ")"),
+                     fallback = paste0(prettyNum(round_half_up(flbk), big.mark = ","), 
+                                       " (",
+                                       prettyNum(round_half_up(flbk_se, 1), big.mark = ","),
+                                       ")"),
+                     percent = flbk / abund * 100)) |> 
+  mutate(across(ovrst_dam,
+                ~ fct_relevel(.,
+                              "Total",
+                              after = Inf))) |> 
+  mutate(across(percent,
+                ~ round(., 1)),
+         source_basin = "Yakima") |>
+  select(origin,
+         source_basin,
+         ovrst_dam,
+         overshoot,
+         fallback,
+         percent) |> 
+  arrange(origin,
+          ovrst_dam) |> 
+  relocate(origin,
+           .before = 0) |>
+  rename(last_overshoot_dam = ovrst_dam) |> 
+  clean_names("title") |> 
+  flextable() |> 
+  merge_v(j = c(1, 2)) |> 
+  bold(i = c(5), bold = TRUE) |>
+  autofit()
+  
+```
+
+@fig-ovrst-abund displays estimates of steelhead abundance at four of the mainstem dams in the Upper Columbia River, separated by whether those fish are overshoots into the Upper Columbia or not. @fig-ovrst-prop translates those estimates into the proportion of total abundance at each dam that is made up of overshooting fish. @fig-dam-prop displays the proportions of how far upstream the steelhead overshooting into the Upper Columbia travel, by focusing on the furthest upstream dam at which each overshoot fish was detected and calculating the proportion of fish at each dam. @fig-flbk-prop depicts the percent of overshoot fish that fallback and are detected in a tributary downstream of Priest Rapids Dam, separated by origin and the furthest upstream dam they overshoot. 
+
+```{r}
+#| label: fig-ovrst-abund
+#| fig-cap: Estimates of abundance of adult steelhead crossing each Upper Columbia dam, colored by whether those fish are overshooting into the Upper Columbia or not, and faceted by origin. Error bars represent 95% confidence intervals.
+
+ovrst_dams |> 
+  ggplot(aes(x = dam,
+             y = abund,
+             color = ovrst)) +
+  facet_wrap(~ origin) +
+  geom_errorbar(aes(ymin = qnorm(0.025, abund, abund_se),
+                    ymax = qnorm(0.975, abund, abund_se)),
+                width = 0) +
+  geom_point(size = 5) +
+  theme(axis.text.x = element_text(angle = 45,
+                                   hjust = 1)) +
+  labs(x = "Dam",
+       y = "Abundance",
+       color = "Overshoot")
+```
+
+```{r}
+#| label: fig-ovrst-prop
+#| fig-cap: Based on estimates of total unique steelhead crossing each Upper Columbia dam, this figure shows the estimated proportion of that total that is comprised of fish overshooting into the Upper Columbia, colored by origin. Error bars represent 95% confidence intervals.
+
+
+pd = 0.4
+ovrst_dams |> 
+  group_by(dam,
+           origin) |> 
+  mutate(prop = n_tags / sum(n_tags),
+         prop_se = sqrt((prop * (1 - prop)) / sum(n_tags))) |> 
+  filter(ovrst) |> 
+  ggplot(aes(x = dam,
+             y = prop,
+             color = origin)) +
+  geom_errorbar(aes(ymin = qnorm(0.025, prop, prop_se),
+                    ymax = qnorm(0.975, prop, prop_se)),
+                width = 0,
+                position = position_dodge(width = pd)) +
+  geom_point(size = 5,
+             position = position_dodge(width = pd)) +
+  labs(x = "Dam",
+       y = "Proportion of Overshoots\nWithin Total Abundance",
+       color = "Origin")
+
+```
+
+```{r, eval = F}
+ovrst_dams |> 
+  group_by(dam,
+           origin) |> 
+  mutate(prop = n_tags / sum(n_tags)) |> 
+  ggplot(aes(x = dam,
+             y = prop,
+             fill = ovrst)) +
+  geom_col() +
+  facet_wrap(~ origin) +
+  labs(x = "Dam",
+       y = "Proportion of Overshoots\nWithin Total Abundance",
+       fill = "Overshoot") +
+  theme(axis.text.x = element_text(angle = 45,
+                                   hjust = 1))
+```
+
+```{r}
+#| label: fig-dam-prop
+#| fig-cap: Colors depict the proportion of all the known, out-of-basin fish overshooting into the Upper Columbia overshooting past each dam (but not any further upstream). 
+
+ovrst_last_dam |> 
+  group_by(origin) |> 
+  mutate(prop = n_tags / sum(n_tags)) |> 
+  ungroup() |> 
+  mutate(across(c(ovrst_dam,
+                  origin),
+                fct_rev)) |> 
+  ggplot(aes(x = origin,
+             y = prop,
+             fill = ovrst_dam)) +
+  geom_col() +
+  # scale_fill_discrete_qualitative(palette = "Dark 3",
+  #                                 name = "Last\nOvershoot\nDam") +
+  scale_fill_viridis_d(name = "Last\nOvershoot\nDam") +
+  labs(x = "Origin",
+       y = "Proportion")
+```
+
+```{r, eval = F}
+
+ovrst_tags |>
+  tabyl(node_group,
+        ovrst_dam,
+        origin) |>
+  adorn_totals() |>
+  adorn_percentages(denominator = "col") |>
+  adorn_pct_formatting()
+```
+
+```{r}
+#| label: fig-flbk-prop
+#| fig-cap: Figure showing the proportion of overshoot fish into the Upper Columbia, separated by their furthest upstream dam and colored by origin, that were detected somewhere downstream of Priest Rapids Dam. 
+
+pd = 0.3
+flbk_prop |> 
+  ggplot(aes(x = ovrst_dam,
+             y = prop,
+             color = origin,
+             group = origin)) +
+  geom_errorbar(aes(ymin = prop_lci,
+                    ymax = prop_uci),
+                width = 0,
+                position = position_dodge(width = pd)) +
+  geom_point(#size = 5,
+             aes(size = tot_tags),
+             position = position_dodge(width = pd)) +
+  scale_size_continuous(range = c(2, 8),
+                        name = "Overshoot\nTags") +
+  labs(x = "Last Overshoot Dam",
+       y = "Fallback Proportion",
+       color = "Origin")
+```
+
+```{r, eval = F}
+#| label: fig-destination
+#| fig-cap: Of all the known, out-of-basin fish overshooting past each dam, colors show the proportion of fish with their final detection in either one of the four Upper Columbia steelhead populations, in Wells pool (detected at Wells Dam, but not anywhere else), somewhere in the mainstem Upper Columbia (upstream of Priest Rapids), or somewhere below Priest Rapids Dam, which could be a fallback. 
+
+ovrst_tags |> 
+  count(ovrst_dam,
+        origin,
+        node_group,
+        name = "n_tags") |> 
+  mutate(across(node_group,
+                ~ factor(.,
+                         levels = c("BelowPriest",
+                                    "Start",
+                                    "Other",
+                                    "WellsPool",
+                                    "Wenatchee",
+                                    "Entiat",
+                                    "Methow",
+                                    "Okanogan"))),
+         across(node_group,
+                ~ fct_recode(.,
+                             "Mainstem UC" = "Other",
+                             "Mainstem UC" = "Start",
+                             "Wells Pool" = "WellsPool",
+                             "Below Priest" = "BelowPriest")),
+         across(node_group,
+                fct_rev)) |> 
+  group_by(ovrst_dam,
+           origin) |> 
+  mutate(prop = n_tags / sum(n_tags)) |> 
+  ungroup() |> 
+  ggplot(aes(x = ovrst_dam,
+             y = prop,
+             fill = node_group)) +
+  geom_col() +
+  facet_wrap(~ origin) +
+  scale_fill_discrete_qualitative(palette = "Dark 3",
+                                  name = "Final Detection") +
+  labs(x = "Overshoot Dam",
+       y = "Proportion") +
+  theme(axis.text.x = element_text(angle = 45,
+                                   hjust = 1))
+```
+
+## Wells Hatchery Fish
+
+Of the `r sum(tag_summ$hatchery_byname %in% unique(wells_rrf$hatchery_byname))` fish identified at Priest Rapids as coming from Wells Hatchery broodstock, `r nrow(wells_rrf)` were detected passing Rocky Reach Dam. @tbl-wells-fate shows where their final detection occurred, broken out by broodstock code identified by PBT. Focusing specifically on the two Wells Hatchery safety net stocks, @tbl-wells-site shows the furthest upstream detection sites and how many tags from each broodstock were detected there. 
+
+```{r}
+#| label: tbl-wells-fate
+#| tbl-cap: "This table shows how many tags from various hatchery broodstocks in the Methow and Okanogan, detected crossing Rocky Reach dam, had their last detection in certain locations. Fish identified as being in Wells Pool had their final detection in the fish ladder at Wells Dam. Broodstock codes are as follows: OmyWELL - Wells Hatchery safety net fish released at Wells Dam, OmyWMET - Wells Hatchery safety net fish releaseed in lower Methow, OmyWINT - Winthrop National Fish Hatchery fish released in Methow, OmyWOKA - released in Okanogan, Salmon Creek and Antoine Creek (Okanogan basin), OmyWOMA - released in Omak Creek (Okanogan basin)."
+
+wells_rrf |> 
+  tabyl(final_det, hatchery_byname) |> 
+  adorn_totals("both") |> 
+  pivot_longer(cols = -final_det,
+               names_to = "hatch_nm",
+               values_to = "n_tags") |> 
+  full_join(
+    wells_rrf |> 
+      tabyl(final_det, hatchery_byname) |> 
+      adorn_totals("both") |> 
+      adorn_percentages(denominator = "col") |> 
+      adorn_pct_formatting() |> 
+      pivot_longer(cols = -final_det,
+                   names_to = "hatch_nm",
+                   values_to = "perc"),
+    by = join_by(final_det, 
+                 hatch_nm)
+  ) |> 
+  mutate(prnt = paste0(n_tags,
+                       " (",
+                       perc,
+                       ")")) |> 
+  select(final_det, 
+         hatch_nm,
+         prnt) |> 
+  mutate(across(hatch_nm,
+                ~ fct_relevel(.,
+                              "OmyWINT",
+                              after = 2))) |> 
+  pivot_wider(names_from = hatch_nm,
+              values_from = prnt,
+              names_sort = T) |>
+  mutate(across(final_det,
+                ~ case_match(.,
+                             "BelowPriest" ~ "Below Priest",
+                             .default = .)),
+         across(final_det,
+                ~ fct_relevel(.,
+                              "Total",
+                              after = 0))) |>
+  arrange(desc(final_det)) |> 
+  rename("Final Detection" = final_det) |> 
+  flextable() |> 
+  bold(i = n_distinct(wells_rrf$final_det) + 1) |> 
+  autofit() |> 
+  fit_to_width(max_width = 6.4,
+               unit = "in")
+
+```
+
+```{r}
+#| label: tbl-wells-site
+#| tbl-cap: "This table shows how many tags (percent) from the two Wells Hatchery safety net broodstocks, detected crossing Rocky Reach dam, had their furthest upstream detection at various locations. Fish identified as being in Wells Pool had their final detection in the fish ladder at Wells Dam. Broodstock codes are as follows: OmyWELL - Wells Hatchery safety net fish released at Wells Dam, OmyWMET - Wells Hatchery safety net fish releaseed in lower Methow. Several areas have been grouped into lower, middle and upper Methow reaches."
+
+wells_site <-
+  wells_rrf |> 
+  filter(hatchery_byname %in% c("OmyWELL",
+                                "OmyWMET")) |> 
+  mutate(site_code = str_remove(final_node, "_U$"),
+         across(site_code,
+                ~ str_remove(., "_D$"))) |> 
+  count(hatchery_byname,
+        site_code,
+        watershed = group,
+        name = "n_tags") |>
+  mutate(across(watershed,
+                ~ fct_recode(.,
+                             Mainstem = "Other",
+                             "Below Priest" = "BelowPriest",
+                             "Wells Pool" = "WellsPool")),
+         across(watershed,
+                ~ fct_relevel(.,
+                              "Mainstem",
+                              "Wells Pool",
+                              "Methow",
+                              "Okanogan",
+                              after = 0))) |> 
+  group_by(hatchery_byname) |> 
+  mutate(tot_tags = sum(n_tags),
+         pct = n_tags / sum(n_tags),
+         prnt_val = paste0(n_tags, 
+                           " (",
+                           round(pct * 100, 1),
+                           "%)")) |> 
+  ungroup() |> 
+  left_join(configuration |> 
+              select(site_code,
+                     site_name,
+                     rkm,
+                     rkm_total) |> 
+              distinct(),
+            by = join_by(site_code)) |> 
+  relocate(watershed,
+           site_name,
+           rkm,
+           .before = 0)
+
+site_tab <-
+  bind_rows(
+    wells_site,
+    
+    wells_site |> 
+      mutate(site_name = case_when(site_code %in% c("LMR",
+                                                    "GLC",
+                                                    "LBC") ~ "Lower Methow",
+                                   site_code %in% c("MRC",
+                                                    "BVC") ~ "Middle Methow",
+                                   site_code %in% c("CRW",
+                                                    "SCP",
+                                                    "MRW",
+                                                    "WFC") ~ "Upper Methow",
+                                   .default = NA_character_),
+             across(rkm,
+                    ~ case_when(site_name == "Lower Methow" ~ "843.008",
+                                site_name == "Middle Methow" ~ "843.045",
+                                site_name == "Upper Methow" ~ "843.085",
+                                .default = .)),
+             across(rkm_total,
+                    ~ case_when(site_name == "Lower Methow" ~ 851,
+                                site_name == "Middle Methow" ~ 888,
+                                site_name == "Upper Methow" ~ 928,
+                                .default = .))) |> 
+      filter(!is.na(site_name)) |> 
+      group_by(hatchery_byname,
+               tot_tags,
+               watershed,
+               site_name,
+               rkm,
+               rkm_total) |> 
+      summarize(across(n_tags,
+                       sum),
+                .groups = "drop") |> 
+      bind_rows(
+        wells_site |> 
+          select(hatchery_byname,
+                 tot_tags,) |> 
+          distinct() |> 
+          mutate(n_tags = tot_tags,
+                 site_name = "Total",
+                 rkm_total = 1000)
+      ) |> 
+      mutate(pct = n_tags / tot_tags,
+             prnt_val = paste0(n_tags, 
+                               " (",
+                               round(pct * 100, 1),
+                               "%)"))
+  ) |> 
+  arrange(rkm) |> 
+  mutate(across(site_name,
+                as_factor),
+         across(site_name,
+                ~ fct_relevel(.,
+                              "Lower Methow",
+                              after = 10)),
+         across(site_name,
+                ~ fct_relevel(.,
+                              "Middle Methow",
+                              after = 13)),
+         across(site_name,
+                ~ fct_relevel(.,
+                              "Upper Methow",
+                              after = 18))) |> 
+  arrange(site_name)
+
+site_tab |> 
+  select(watershed:site_code,
+         prnt_val) |> 
+  pivot_wider(names_from = hatchery_byname,
+              values_from = prnt_val) |> 
+  mutate(across(starts_with("Omy"),
+                ~ replace_na(., "0 (0%)"))) |> 
+  arrange(site_name) |> 
+  clean_names("title") |> 
+  rename(OmyWELL = "Omy Well",
+         OmyWMET = "Omy Wmet",
+         RKM = Rkm) |> 
+  flextable() |> 
+  italic(i = which(levels(site_tab$site_name) %in% c("Lower Methow",
+                                        "Middle Methow",
+                                        "Upper Methow"))) |> 
+  bold(i = n_distinct(site_tab$site_name)) |>
+  autofit() |> 
+  fit_to_width(max_width = 6.4,
+               unit = "in")
+
+
+```
+
+
+## East Bank Hatchery Fish
+
+Of the `r sum(tag_summ$hatchery_byname == "OmyEAST")` fish identified at Priest Rapids as coming from East Bank Hatchery broodstock, `r nrow(eb_ria)` were detected passing Rock Island Dam. @tbl-eb-fate shows where their final detection occurred. 
+
+```{r}
+#| label: tbl-eb-fate
+#| tbl-cap: This table shows how many tags from East Bank Hatchery broodstock, detected crossing Rock Island dam, had their last detection in certain locations. Fish identified as being in Wells Pool had their final detection in the fish ladder at Wells Dam.
+
+
+eb_ria |> 
+  tabyl(final_det) |> 
+  arrange(desc(n)) |> 
+  adorn_totals() |> 
+  adorn_pct_formatting() |> 
+  rename("Final Detection" = final_det,
+         "N tags" = n,
+         "Percent" = percent) |> 
+  flextable() |> 
+  bold(i = n_distinct(eb_ria$final_det) + 1) |> 
+  autofit()
+```
+
+# References
+
