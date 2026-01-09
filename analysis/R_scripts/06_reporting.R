@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: format results to be saved
 # Created: 11/30/22
-# Last Modified: 2/26/25
+# Last Modified: 1/8/26
 # Notes:
 
 #-----------------------------------------------------------------
@@ -49,7 +49,7 @@ makeTableNms = function(df) {
 
 #-----------------------------------------------------------------
 # set the highest year to be included
-max_yr = 2024
+max_yr = 2025
 # max_yr = lubridate::year(lubridate::today()) - 1
 
 #-----------------------------------------------------------------
@@ -66,8 +66,9 @@ min_non0_wks = 3
 spwn_est <-
   crossing(population = c("Wenatchee",
                           "Methow"),
-           spawn_year = 2014:max_yr) |>
-           # spawn_year = 2020) |>
+           # spawn_year = 2014:max_yr) |>
+           # spawn_year = 2024:max_yr) |>
+           spawn_year = max_yr) |>
   mutate(run_year = spawn_year - 1) %>%
   select(run_year, spawn_year, population) %>%
   mutate(results_list = map2(spawn_year,
@@ -97,6 +98,9 @@ spwn_est <-
                                                  query_year = yr,
                                                  n_observers = "two",
                                                  phos_data = phos_method,
+                                                 # adjust_fpr = case_when(yr >= 2025 ~ F,
+                                                 #                        .default = T),
+                                                 adjust_fpr = T,
                                                  save_rda = F)
 
                                # for tributary estimates, make any 0s NAs
@@ -912,13 +916,14 @@ dabom_df <-
   crossing(spawn_year = c(2011:max_yr)) %>%
   mutate(run_year = spawn_year - 1) %>%
   select(run_year, spawn_year) %>%
-  mutate(dam_cnt_name = if_else(spawn_year %in% c(2011:2015, 2018),
-                                "PriestRapids",
-                                "RockIsland"))
-# # focus only on max year
-# dabom_df <-
-#   dabom_df |>
-#   filter(spawn_year == max_yr)
+  mutate(dam_cnt_name = case_when(spawn_year %in% c(2011:2015,
+                                                    2018) ~ "PriestRapids",
+                                  .default = "RockIsland"))
+
+# focus only on max year
+dabom_df <-
+  dabom_df |>
+  filter(spawn_year == max_yr)
 
 # get all the tag summaries
 all_tags <-
@@ -1301,7 +1306,8 @@ sexed_tags <-
                              0)))
 
 # sex proportions and escapement
-sex_prop <- sexed_tags %>%
+sex_prop <-
+  sexed_tags %>%
   bind_rows(sexed_tags %>%
               group_by(run_year,
                        spawn_year,
@@ -1816,7 +1822,12 @@ sex_err_rate <-
                select(spawn_year,
                       tag_code,
                       sex_final) |>
-               distinct(),
+               distinct() |>
+               # correct one tag with different sex call at broodstock from genetics, but died at broodstock
+               mutate(across(sex_final,
+                             ~ case_when(spawn_year == 2025 &
+                                           tag_code == "3DD.003E0FF10A" ~ "M",
+                                         .default = .))),
              by = c("spawn_year",
                     "tag_code")) |>
   filter(!is.na(sex_final),
@@ -1845,157 +1856,167 @@ sex_err_rate <-
            .after = "perc_false")
 
 # re-calculate proportion of each sex in each population each year
-sex_prop <-
-  sex_prop |>
-  clean_names() |>
-  mutate(across(sex,
-                ~ recode(.,
-                         "Male" = "M",
-                         "Female" = "F"))) |>
-  # dabom_est |>
-  # mutate(res = map(all_results,
-  #                  "sex_yr")) |>
-  # select(-dam_cnt_name,
-  #        -all_results) |>
-  # unnest(res) |>
-  mutate(across(origin,
-                as_factor)) |>
-  select(run_year:total_sexed) |>
-  rename(priest_tags = n_tags) |>
-  left_join(sex_err_rate |>
-              select(spawn_year,
-                     sex,
-                     starts_with("perc")),
-            by = c("spawn_year", "sex")) |>
-  pivot_wider(names_from = sex,
-              values_from = c(priest_tags,
-                              perc_false,
-                              perc_se)) |>
-  mutate(true_male = priest_tags_M - (priest_tags_M * perc_false_M) + (priest_tags_F * perc_false_F),
-         true_female = priest_tags_F - (priest_tags_F * perc_false_F) + (priest_tags_M * perc_false_M)) |>
-  # mutate(across(starts_with("true"),
-  #               janitor::round_half_up)) |>
-  rowwise() |>
-  mutate(true_m_se = msm::deltamethod(~ x1 - (x1 * x2) + (x3 * x4),
-                                      mean = c(priest_tags_M,
-                                               perc_false_M,
-                                               priest_tags_F,
-                                               perc_false_F),
-                                      cov = diag(c(0,
-                                                   perc_se_M,
-                                                   0,
-                                                   perc_se_F)^2)),
-         true_f_se = msm::deltamethod(~ x1 - (x1 * x2) + (x3 * x4),
-                                      mean = c(priest_tags_F,
-                                               perc_false_F,
-                                               priest_tags_M,
-                                               perc_false_M),
-                                      cov = diag(c(0,
-                                                   perc_se_F,
-                                                   0,
-                                                   perc_se_M)^2))) |>
-  mutate(n_sexed = true_male + true_female,
-         across(n_sexed,
-                round_half_up),
-         prop_m = true_male / (true_male + true_female),
-         prop_se = msm::deltamethod(~ x1 / (x1 + x2),
-                                    mean = c(true_male,
-                                             true_female),
-                                    cov = diag(c(true_m_se,
-                                                 true_f_se)^2))) |>
-  ungroup() |>
-  select(run_year:origin,
-         total_sexed,
-         contains("priest"),
-         n_sexed,
-         starts_with("true"),
-         starts_with("prop")) |>
-  mutate(prop_f = 1 - prop_m) |>
-  # filter(total_sexed != n_sexed)
-  clean_names() |>
-  pivot_longer(cols = c(starts_with("priest"),
-                        starts_with("true"),
-                        starts_with("prop"))) |>
-  mutate(sex = if_else(str_detect(name, "_m"),
-                       "M", "F"),
-         across(name,
-                str_remove,
-                "_male"),
-         across(name,
-                str_remove,
-                "_female"),
-         across(name,
-                str_remove,
-                "_m"),
-         across(name,
-                str_remove,
-                "_f"),
-         across(name,
-                str_remove,
-                "_M"),
-         across(name,
-                str_remove,
-                "_F"),
-         across(name,
-                str_replace,
-                "true",
-                "n_tags")) |>
-  pivot_wider(names_from = "name",
-              values_from = "value") |>
-  arrange(spawn_year,
-          population,
-          origin,
-          sex) |>
-  fill(prop_se,
-       .direction = "down") |>
-  select(run_year:origin,
-         sex,
-         priest_tags,
-         n_tags,
-         total_sexed = n_sexed,
-         # total_sexed,
-         starts_with("prop")) |>
-  mutate(across(c(n_tags,
-                  total_sexed),
-                round_half_up)) |>
-  left_join(pop_escp |>
-              clean_names() |>
-              rename(total_est = total_escapement) %>%
-              rowwise() %>%
-              mutate(total_se = sqrt(sum(c(nos_se,
-                                           hos_se)^2))) %>%
-              ungroup() %>%
-              select(run_year,
-                     spawn_year,
-                     population,
-                     ends_with("est"),
-                     ends_with("se")) %>%
-              pivot_longer(c(ends_with("est"),
-                             ends_with("se"))) %>%
-              mutate(type = if_else(str_detect(name, "_se$"),
-                                    "se",
-                                    "est"),
-                     origin = str_split(name, "_", simplify = T)[,1],
-                     across(origin,
-                            recode,
-                            "total" = "All",
-                            "nos" = "Natural",
-                            "hos" = "Hatchery")) %>%
-              select(-name) %>%
-              pivot_wider(names_from = type,
-                          values_from = value),
-            by = c("run_year", "spawn_year", "population", "origin")) |>
-  rowwise() |>
-  mutate(escp = est * prop,
-         escp_se = msm::deltamethod(~ x1 * x2,
-                                    mean = c(est,
-                                             prop),
-                                    cov = diag(c(se, prop_se)^2))) |>
-  ungroup() |>
-  select(-est,
-         -se) |>
-  makeTableNms()
-
+if(sum(sex_err_rate$n_false) > 0) {
+  sex_prop <-
+    sex_prop |>
+    clean_names() |>
+    mutate(across(sex,
+                  ~ recode(.,
+                           "Male" = "M",
+                           "Female" = "F"))) |>
+    # dabom_est |>
+    # mutate(res = map(all_results,
+    #                  "sex_yr")) |>
+    # select(-dam_cnt_name,
+    #        -all_results) |>
+    # unnest(res) |>
+    mutate(across(origin,
+                  as_factor)) |>
+    select(run_year:total_sexed) |>
+    rename(priest_tags = n_tags) |>
+    left_join(sex_err_rate |>
+                select(spawn_year,
+                       sex,
+                       starts_with("perc")),
+              by = c("spawn_year", "sex")) |>
+    pivot_wider(names_from = sex,
+                values_from = c(priest_tags,
+                                perc_false,
+                                perc_se)) |>
+    mutate(true_male = priest_tags_M - (priest_tags_M * perc_false_M) + (priest_tags_F * perc_false_F),
+           true_female = priest_tags_F - (priest_tags_F * perc_false_F) + (priest_tags_M * perc_false_M)) |>
+    # mutate(across(starts_with("true"),
+    #               janitor::round_half_up)) |>
+    rowwise() |>
+    mutate(true_m_se = msm::deltamethod(~ x1 - (x1 * x2) + (x3 * x4),
+                                        mean = c(priest_tags_M,
+                                                 perc_false_M,
+                                                 priest_tags_F,
+                                                 perc_false_F),
+                                        cov = diag(c(0,
+                                                     perc_se_M,
+                                                     0,
+                                                     perc_se_F)^2)),
+           true_f_se = msm::deltamethod(~ x1 - (x1 * x2) + (x3 * x4),
+                                        mean = c(priest_tags_F,
+                                                 perc_false_F,
+                                                 priest_tags_M,
+                                                 perc_false_M),
+                                        cov = diag(c(0,
+                                                     perc_se_F,
+                                                     0,
+                                                     perc_se_M)^2))) |>
+    mutate(n_sexed = true_male + true_female,
+           across(n_sexed,
+                  round_half_up),
+           prop_m = true_male / (true_male + true_female),
+           prop_se = msm::deltamethod(~ x1 / (x1 + x2),
+                                      mean = c(true_male,
+                                               true_female),
+                                      cov = diag(c(true_m_se,
+                                                   true_f_se)^2))) |>
+    ungroup() |>
+    select(run_year:origin,
+           total_sexed,
+           contains("priest"),
+           n_sexed,
+           starts_with("true"),
+           starts_with("prop")) |>
+    mutate(prop_f = 1 - prop_m) |>
+    # filter(total_sexed != n_sexed)
+    clean_names() |>
+    pivot_longer(cols = c(starts_with("priest"),
+                          starts_with("true"),
+                          starts_with("prop"))) |>
+    mutate(sex = if_else(str_detect(name, "_m"),
+                         "M", "F"),
+           across(name,
+                  str_remove,
+                  "_male"),
+           across(name,
+                  str_remove,
+                  "_female"),
+           across(name,
+                  str_remove,
+                  "_m"),
+           across(name,
+                  str_remove,
+                  "_f"),
+           across(name,
+                  str_remove,
+                  "_M"),
+           across(name,
+                  str_remove,
+                  "_F"),
+           across(name,
+                  str_replace,
+                  "true",
+                  "n_tags")) |>
+    pivot_wider(names_from = "name",
+                values_from = "value") |>
+    arrange(spawn_year,
+            population,
+            origin,
+            sex) |>
+    fill(prop_se,
+         .direction = "down") |>
+    select(run_year:origin,
+           sex,
+           priest_tags,
+           n_tags,
+           total_sexed = n_sexed,
+           # total_sexed,
+           starts_with("prop")) |>
+    mutate(across(c(n_tags,
+                    total_sexed),
+                  round_half_up)) |>
+    left_join(pop_escp |>
+                clean_names() |>
+                rename(total_est = total_escapement) %>%
+                rowwise() %>%
+                mutate(total_se = sqrt(sum(c(nos_se,
+                                             hos_se)^2))) %>%
+                ungroup() %>%
+                select(run_year,
+                       spawn_year,
+                       population,
+                       ends_with("est"),
+                       ends_with("se")) %>%
+                pivot_longer(c(ends_with("est"),
+                               ends_with("se"))) %>%
+                mutate(type = if_else(str_detect(name, "_se$"),
+                                      "se",
+                                      "est"),
+                       origin = str_split(name, "_", simplify = T)[,1],
+                       across(origin,
+                              recode,
+                              "total" = "All",
+                              "nos" = "Natural",
+                              "hos" = "Hatchery")) %>%
+                select(-name) %>%
+                pivot_wider(names_from = type,
+                            values_from = value),
+              by = c("run_year", "spawn_year", "population", "origin")) |>
+    rowwise() |>
+    mutate(escp = est * prop,
+           escp_se = msm::deltamethod(~ x1 * x2,
+                                      mean = c(est,
+                                               prop),
+                                      cov = diag(c(se, prop_se)^2))) |>
+    ungroup() |>
+    select(-est,
+           -se,
+           -priest_tags) |>
+    makeTableNms()
+} else {
+  sex_prop <-
+    sex_prop |>
+    clean_names() |>
+    mutate(priest_tags = n_tags) |>
+    relocate(priest_tags,
+             .before = "n_tags") |>
+    makeTableNms()
+}
 
 #-----------------------------------------------------------------
 # generate table of escapement estimates at Priest
@@ -2285,7 +2306,7 @@ write_xlsx(x = save_list,
 # read in previous estimates, add latest year to them
 
 # what year are we overwriting or adding?
-yr = 2024
+yr = 2025
 
 library(readxl)
 output_path <- paste0("T:/DFW-Team FP Upper Columbia Escapement - General/",
