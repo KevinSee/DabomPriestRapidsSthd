@@ -98,9 +98,9 @@ spwn_est <-
                                                  query_year = yr,
                                                  n_observers = "two",
                                                  phos_data = phos_method,
-                                                 # adjust_fpr = case_when(yr >= 2025 ~ F,
-                                                 #                        .default = T),
-                                                 adjust_fpr = T,
+                                                 adjust_fpr = case_when(yr >= 2025 ~ F,
+                                                                        .default = T),
+                                                 # adjust_fpr = T,
                                                  save_rda = F)
 
                                # for tributary estimates, make any 0s NAs
@@ -1235,15 +1235,21 @@ tag_df <-
          cwt,
          trap_date = start_date,
          final_node:tag_detects,
-         path) |>
+         path,
+         any_of(c("assignment_method",
+                  "popname",
+                  "gsi_assignment",
+                  "gsi_prob"))) |>
   mutate(origin = str_extract(species_run_rear_type, "[:alpha:]$")) |>
   relocate(origin,
            .after = species_run_rear_type) |>
-  mutate(population = case_when(str_detect(path, "LWE") ~ "Wenatchee",
+  mutate(spawn_pop = case_when(str_detect(path, "LWE") ~ "Wenatchee",
                                 str_detect(path, "ENL") ~ "Entiat",
                                 str_detect(path, "LMR") ~ "Methow",
                                 str_detect(path, "OKL") ~ "Okanogan",
                                 .default = NA_character_)) |>
+  relocate(spawn_pop,
+           .before = sex) |>
   makeTableNms()
 
 # detection probabilities
@@ -2297,7 +2303,7 @@ save_list <- list(
 # actually save entire file
 write_xlsx(x = save_list,
            path = paste0("T:/DFW-Team FP Upper Columbia Escapement - General/",
-                         "UC_Sthd/Estimates/",
+                         "UC_Sthd/estimates/",
                          "UC_STHD_Model_Output",
                          # "_", format(today(), "%Y%m%d"),
                          ".xlsx"))
