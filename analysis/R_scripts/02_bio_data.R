@@ -914,12 +914,15 @@ bio_comp |>
 #-----------------------------------------------------------------
 bio_final_df <-
   bio_final_df |>
+  select(-c(assignment_method:gsi_prob)) |>
   left_join(gen_df |>
               mutate(spawn_year = 2025) |>
               select(spawn_year,
                      pit_tag,
                      assignment_method,
                      popname,
+                     hatchery_by,
+                     hatchery_byname,
                      gsi_assignment = observed_gsi_assignment,
                      gsi_prob = probability_gsi_1) |>
               distinct(),

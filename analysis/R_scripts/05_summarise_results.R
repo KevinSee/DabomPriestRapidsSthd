@@ -38,7 +38,7 @@ yr = 2025
 # what dam count to use?
 dam_cnt_name = c("PriestRapids",
                  "RockIsland",
-                 "RockyReach")[1]
+                 "RockyReach")[2]
 
 #-----------------------------------------------------------------
 # run for set of years
