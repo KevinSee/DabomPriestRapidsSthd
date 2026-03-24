@@ -1238,6 +1238,8 @@ tag_df <-
          path,
          any_of(c("assignment_method",
                   "popname",
+                  "hatchery_by",
+                  "hatchery_byname",
                   "gsi_assignment",
                   "gsi_prob"))) |>
   mutate(origin = str_extract(species_run_rear_type, "[:alpha:]$")) |>
