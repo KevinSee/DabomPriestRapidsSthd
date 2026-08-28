@@ -119,7 +119,7 @@ tag_summ <-
                       result_type = "tag_summ") |>
     left_join(gen_df |> 
               select(tag_code = pit_tag,
-                     hatchery_byname,
+                     # hatchery_byname,
                      by),
             by = join_by(tag_code)) |> 
   mutate(across(origin,
