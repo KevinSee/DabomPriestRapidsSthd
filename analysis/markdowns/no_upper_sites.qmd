@@ -1,0 +1,659 @@
+---
+title: "Evaluation of the Utility of Some PIT Tag Sites"
+subtitle: "Wenatchee"
+
+author:
+  - name: Kevin E. See
+    corresponding: true
+    email: Kevin.See@dfw.wa.gov
+    affiliations:
+      - ref: "wdfw"
+      
+affiliations:
+  - id: "wdfw"
+    name: Washington Department of Fish and Wildlife
+    address: 600 Capitol Way North
+    city: Olympia
+    state: WA
+    postal-code: 98501
+    country: USA
+    
+date: "today"
+
+toc: true
+toc-expand: true
+
+format: 
+  html:
+    fig-height: 7
+    fig-width: 7
+  pdf: 
+    fig-height: 6
+    fig-width: 6
+    
+collapse: TRUE
+warning: FALSE
+message: FALSE
+echo: FALSE
+comment: "#>"
+dpi: 600
+---
+
+```{r}
+# load needed libraries
+library(PITcleanr)
+library(DABOM)
+library(tidyverse)
+library(janitor)
+library(rjags)
+library(lubridate)
+library(here)
+library(flextable)
+library(colorspace)
+
+# set theme for figures
+theme_set(theme_bw())
+
+# flextable default settings
+set_flextable_defaults(theme_fun = theme_vanilla,
+                       # font.family = "Times",
+                       font.size = 10,
+                       float = "float",
+                       na_str = "-",
+                       nan_str = "-",
+                       post_process_pdf = function(x) {
+                         x |> 
+                           autofit() |> 
+                           fit_to_width(max_width = 6)
+                         })
+
+
+```
+
+```{r}
+# which years were run?
+all_yrs <- c(2011, 2014, 2017, 2022)
+
+detect_old = detect_new = NULL
+escape_old = escape_new = NULL
+tag_detects = NULL
+for(yr in all_yrs) {
+  # load results from full model
+  dam_cnt_name <-
+    case_when(yr < 2016 ~ "PriestRapids",
+              .default = "RockIsland")
+
+  load(here("analysis/data/derived_data/estimates",
+            dam_cnt_name,
+            paste0("UC_Sthd_DABOM_", yr, ".rda")))
+
+  tag_detects_yr <-
+    bind_rows(
+      tag_summ |> 
+        summarize(n_lower = n_distinct(tag_code[str_detect(tag_detects, "CHL")]),
+                  n_upper = n_distinct(tag_code[str_detect(tag_detects, "CHU")]),
+                  n_upper_only = n_distinct(tag_code[str_detect(tag_detects, "CHU") & str_detect(tag_detects, "CHL", negate = T)])) |> 
+        add_column(spawn_year = yr,
+                   stream = "Chiwawa",
+                   .before = 0),
+      
+      tag_summ |> 
+        summarize(n_lower = n_distinct(tag_code[str_detect(tag_detects, "NAL")]),
+                  n_upper = n_distinct(tag_code[str_detect(tag_detects, "NAU")]),
+                  n_upper_only = n_distinct(tag_code[str_detect(tag_detects, "NAU") & str_detect(tag_detects, "NAL", negate = T)])) |> 
+        add_column(spawn_year = yr,
+                   stream = "Nason",
+                   .before = 0),
+      
+      tag_summ |> 
+        summarize(n_lower = n_distinct(tag_code[str_detect(tag_detects, "PES")]),
+                  n_upper = n_distinct(tag_code[str_detect(tag_detects, "PEU")]),
+                  n_upper_only = n_distinct(tag_code[str_detect(tag_detects, "PEU") & str_detect(tag_detects, "PES", negate = T)])) |> 
+        add_column(spawn_year = yr,
+                   stream = "Peshastin",
+                   .before = 0)
+    )
+  
+  if(is.null(tag_detects)) {
+    tag_detects = tag_detects_yr
+  } else {
+    tag_detects <-
+      tag_detects |> 
+      bind_rows(tag_detects_yr)
+  }
+  
+  # combine detection summaries
+  if(is.null(detect_old)) {
+    detect_old = detect_summ |>
+      tibble::add_column(species = "Steelhead",
+                         spawn_year = yr,
+                         .before = 0)
+  } else {
+    detect_old <-
+      detect_old |>
+      bind_rows(detect_summ |>
+                  tibble::add_column(species = "Steelhead",
+                                     spawn_year = yr,
+                                     .before = 0))
+  }
+
+  # combine escapement summaries
+  if(is.null(escape_old)) {
+    escape_old = escape_summ
+  } else {
+    escape_old <-
+      escape_old |>
+      bind_rows(escape_summ)
+  }
+
+  # drop sites from configuration
+  configuration <-
+    configuration |>
+    filter(!site_code %in% c("CHU",
+                             "NAU",
+                             "PEU"))
+
+  parent_child <-
+    parent_child |>
+    filter(!child %in% c("CHU",
+                         "NAU",
+                         "PEU"))
+
+  # load missing sites model run
+  load(here("analysis",
+            "data",
+            "derived_data",
+            "model_fits",
+            "No_Upper_Sites",
+            paste0('PRA_DABOM_Steelhead_', yr,'.rda')))
+
+  # summarize detection probabilities
+  if(is.null(detect_new)) {
+    detect_new <-
+      summariseDetectProbs(dabom_mod = dabom_mod,
+                           filter_ch = filter_obs) |>
+      tibble::add_column(species = "Steelhead",
+                         spawn_year = yr,
+                         .before = 0)
+  } else {
+    detect_new <-
+      detect_new |>
+      bind_rows(
+        summariseDetectProbs(dabom_mod = dabom_mod,
+                             filter_ch = filter_obs) |>
+          tibble::add_column(species = "Steelhead",
+                             spawn_year = yr,
+                             .before = 0)
+      )
+  }
+
+  # compile all movement probabilities, and multiply them appropriately
+  trans_post_new <-
+    extractTransPost(dabom_mod,
+                     parent_child,
+                     configuration)
+
+
+  trans_df_new <-
+    compileTransProbs(trans_post_new,
+                      parent_child) |>
+    select(-main_branch) |>
+    mutate(across(origin,
+                  ~ case_match(.,
+                               1 ~ "W",
+                               2 ~ "H",
+                               .default = NA_character_)))
+
+  # generate MCMC draws of total abundance by origin
+  abund_post_new <-
+    org_escape |>
+    crossing(chain = 1:max(trans_df_new$chain)) |>
+    group_by(origin,
+             chain) |>
+    summarise(tot_esc_samp = map2(tot_escp,
+                                  tot_escp_se,
+                                  .f = function(x, y) {
+                                    tibble(tot_abund = rnorm(max(trans_df_new$iter),
+                                                             mean = x,
+                                                             sd = y)) %>%
+                                      mutate(iter = 1:n())
+                                  }),
+              .groups = "drop") |>
+    unnest(cols = tot_esc_samp)
+
+
+  # translate movement estimates to escapement
+  escape_post_new <-
+    calcAbundPost(trans_df_new,
+                  abund_post_new)
+
+  escape_summ_new <-
+    summarisePost(escape_post_new,
+                  abund,
+                  location = param,
+                  origin) %>%
+    mutate(across(c(mean, median, mode, sd, skew, kurtosis, matches('CI$')),
+                  ~ round(.,
+                          digits = 2))) %>%
+    arrange(desc(origin), location) %>%
+    tibble::add_column(species = "Steelhead",
+                       spawn_year = yr,
+                       .before = 0)
+
+
+  if(is.null(escape_new)) {
+    escape_new = escape_summ_new
+  } else {
+    escape_new <-
+      escape_new |>
+      bind_rows(escape_summ_new)
+  }
+
+}
+
+# combine old and new estimates
+# for detection probability
+detect_comp <-
+  bind_rows(
+    detect_old |>
+      filter(str_detect(node, "CHL") |
+               str_detect(node, "NAL") |
+               str_detect(node, "PES")) |>
+      arrange(spawn_year,
+              node) |>
+      mutate(source = "old"),
+
+  detect_new |>
+    filter(str_detect(node, "CHL") |
+             str_detect(node, "NAL") |
+             str_detect(node, "PES")) |>
+    arrange(spawn_year,
+            node) |>
+    mutate(source = "new")
+) |>
+  select(spawn_year,
+         node,
+         n_tags,
+         source,
+         mean,
+         median,
+         mode,
+         sd,
+         ends_with("ci")) |>
+  pivot_wider(names_from = source,
+              values_from = c(mean:sd,
+                              ends_with("ci"))) |>
+  mutate(across(spawn_year,
+                as.factor))
+
+# for escapement
+escape_comp <-
+  bind_rows(
+    escape_old |>
+      filter(str_detect(location, "CHL") |
+               str_detect(location, "NAL") |
+               str_detect(location, "PES"),
+             str_detect(location, "_bb", negate = T)) |>
+      mutate(source = "old"),
+
+    escape_new |>
+      filter(str_detect(location, "CHL") |
+               str_detect(location, "NAL") |
+               str_detect(location, "PES")) |>
+      mutate(source = "new")
+  ) |>
+  select(spawn_year,
+         location,
+         origin,
+         source,
+         mean,
+         median,
+         mode,
+         sd,
+         ends_with("ci")) |>
+  pivot_wider(names_from = source,
+              values_from = c(mean:sd,
+                              ends_with("ci"))) |>
+  mutate(across(spawn_year,
+                as.factor))
+
+```
+
+
+# Goal
+
+Our goal is to evaluate the impact of removing several PIT tag detection sites in the Wenatchee basin on steelhead escapement estimates made with the Dam Adult Branch Occupancy Model (DABOM). Specifically, we examined the effects of removing CHL (in the upper Chiwawa River), NAL (in upper Nason Creek) and PEU (in upper Peshastin Creek).
+
+# Methods
+
+We used the exact same PIT tag detections that were used in the latest DABOM estimates. We chose several years to test across a range of escapement sizes (`r paste(all_yrs, collapse = ", ")`. We removed any detections from CHL, NAL or PEU, and dropped those three sites from the model. We then re-ran DABOM and compiled estimates of detection probability and abundance at the site immediately downstream of those sites to compare with the original estimates (@tbl-sites). We plotted the differences, and calculated summary statistics.
+
+```{r}
+#| label: tbl-sites
+#| tbl-cap: "Sites evaluated for removal, the closest downstream site to them and on what tributary they are located."
+
+tibble(removed_site = c("CHU",
+                        "NAU",
+                        "PEU"),
+       downstream_site = c("CHL",
+                           "NAL",
+                           "PES"),
+       tributary = c("Chiwawa River",
+                     "Nason Creek",
+                     "Peshastin Creek")) |> 
+  clean_names("title") |> 
+  flextable() |> 
+  autofit()
+
+```
+
+{{< pagebreak >}}
+
+# Results
+
+## Tag Detections
+
+```{r}
+#| label: tbl-tags
+#| tbl-cap: "Number of tags detected at the lower site, the upper site, and the upper site only for each year and tributary."
+
+tag_detects |> 
+  mutate(across(spawn_year,
+                as.factor)) |> 
+  clean_names("title") |> 
+  flextable() |> 
+  width(j = 3:5,
+        width = 0.5)
+```
+
+{{< pagebreak >}}
+
+## Detection Probability
+
+```{r}
+#| label: tbl-detect-est
+#| tbl-cap: "Estimates of detection probability, with and without including detections from the upper site."
+
+detect_comp |> 
+  mutate(est_w_upper = paste0(round_half_up(median_old, digits = 2), 
+                              " (",
+                              round_half_up(sd_old, digits = 2),
+                              ")"),
+         est_wo_upper = paste0(round_half_up(median_new, digits = 2), 
+                              " (",
+                              round_half_up(sd_new, digits = 2),
+                              ")"),
+         error = median_new - median_old,
+         rel_err = (error / median_old) * 100) |> 
+  select(spawn_year,
+         node,
+         n_tags,
+         est_w_upper,
+         est_wo_upper,
+         error,
+         rel_err) |> 
+  clean_names("title") |> 
+  flextable() |> 
+  set_header_labels(values = list("Est Wo Upper" = "Est wo Upper",
+                                  "Rel Err" = "Relative Err (%)")) |> 
+  colformat_double(j = c(6),
+                   digits = 3) |> 
+  colformat_double(j = c(7),
+                   digits = 1) |> 
+  width(j = 1:3,
+        width = 0.5) |> 
+  width(j = 4:5,
+        width = 1) |> 
+  width(j = 6:7,
+        width = 0.5)
+
+```
+
+```{r}
+#| label: fig-detect-comp
+#| fig-cap: "Estimates of detection probabilities at each node from model runs that included the upstream sites (x-axis) and those where those sites were removed (y-axis). Colors correspond to the arrays, shape to the spawn year and the whiskers represent 95% confidence intervals. There is a dashed one-to-one line, and a blue linear regression line with a fixed intercept at zero is also shown."
+#| fig-pos: "H"
+
+
+detect_comp |>
+  filter(n_tags > 0) |>
+  ggplot(aes(x = median_old,
+             y = median_new)) +
+  geom_abline(linetype = 2) +
+  geom_errorbar(aes(ymin = lower_ci_new,
+                    ymax = upper_ci_new,
+                    color = node),
+                width = 0) +
+  geom_errorbar(aes(xmin = lower_ci_old,
+                    xmax = upper_ci_old,
+                    color = node),
+                width = 0) +
+  geom_point(aes(color = node,
+                 shape = spawn_year),
+             size = 4) +
+  geom_smooth(method = lm,
+              formula = y ~ x - 1) +
+  scale_color_brewer(palette = "Paired",
+                     name = "Node") +
+  labs(x = "Using All Sites",
+       y = "Removing Upper Sites",
+       title = "Detection Probability",
+       shape = "Spawn\nYear")
+```
+
+```{r}
+#| label: fig-detect-se
+#| fig-cap: "Plot of the standard error of the detection probability from model runs that included the upstream sites (x-axis) and those where those sites were removed (y-axis). Colors correspond to the arrays and shape to the spawn year. There is a dashed one-to-one line, and a blue linear regression line with a fixed intercept at zero is also shown."
+#| fig-pos: "H"
+
+detect_comp |>
+  filter(n_tags > 0) |>
+  ggplot(aes(x = sd_old,
+             y = sd_new)) +
+  geom_abline(linetype = 2) +
+  geom_point(aes(color = node,
+                 shape = spawn_year),
+             size = 4) +
+  geom_smooth(method = lm,
+              formula = y ~ x - 1) +
+  scale_color_brewer(palette = "Paired",
+                     name = "Node") +
+  labs(x = "Using All Sites",
+       y = "Removing Upper Sites",
+       title = "SE of Detection Probability",
+       shape = "Spawn\nYear")
+  
+```
+
+```{r}
+#| label: tbl-detect-err
+#| tbl-cap: "Summary statistics of the detection probability errors associated with model runs without the upper sites. Statistics include mean error (ME) mean relative error (MRE), mean absolute error (MAE), mean absolute percent error (MAPE) and root mean squared error (RMSE)."
+
+
+bind_rows(
+  detect_comp |>
+    filter(n_tags != 0) |>
+    filter(mean_new != 1,
+         mean_old != 1) |>
+    mutate(err = median_new - median_old,
+           rel_err = err / median_old) |>
+    group_by(node) |>
+    summarize(ME = mean(err),
+              MRE = mean(rel_err) * 100,
+              MAE = mean(abs(err)),
+              MAPE = mean(abs(rel_err)) * 100,
+              RMSE = sqrt(mean(err^2)),
+              .groups = "drop"),
+  
+  detect_comp |>
+    filter(n_tags != 0) |>
+    mutate(err = median_new - median_old,
+           rel_err = err / median_old) |>
+    summarize(ME = mean(err),
+              MRE = mean(rel_err) * 100,
+              MAE = mean(abs(err)),
+              MAPE = mean(abs(rel_err)) * 100,
+              RMSE = sqrt(mean(err^2))) |> 
+    add_column(node = "Overall")
+) |> 
+  rename(Node = node) |> 
+  flextable() |> 
+  set_header_labels(values = list("MRE" = "MRE (%)",
+                                  "MAPE" = "MAPE (%)")) |> 
+  colformat_double(j = c(2, 4, 6),
+                   digits = 3) |> 
+  colformat_double(j = c(3, 5),
+                   digits = 1) |> 
+  width(width = 0.8)
+```
+
+{{< pagebreak >}}
+
+## Escapement
+
+```{r}
+#| label: tbl-escape-est
+#| tbl-cap: "Estimates of escapement, with and without including detections from the upper site."
+
+escape_comp |> 
+  mutate(est_w_upper = paste0(round_half_up(median_old), 
+                              " (",
+                              round_half_up(sd_old),
+                              ")"),
+         est_wo_upper = paste0(round_half_up(median_new), 
+                              " (",
+                              round_half_up(sd_new),
+                              ")"),
+         error = median_new - median_old,
+         rel_err = (error / median_old) * 100) |> 
+  select(spawn_year,
+         location,
+         origin,
+         est_w_upper,
+         est_wo_upper,
+         error,
+         rel_err) |> 
+  arrange(spawn_year,
+          location,
+          origin) |> 
+  clean_names("title") |> 
+  flextable() |> 
+  set_header_labels(values = list("Est Wo Upper" = "Est wo Upper",
+                                  "Rel Err" = "Relative Err (%)")) |> 
+  colformat_double(j = c(6),
+                   digits = 1) |> 
+  colformat_double(j = c(7),
+                   digits = 3) |> 
+  width(j = 1:3,
+        width = 0.5) |> 
+  width(j = c(4, 5),
+        width = 1) |> 
+  width(j = 6:7,
+        width = 0.5)
+```
+
+```{r}
+#| label: fig-escape-comp
+#| fig-cap: "Estimates of escapement past each site for model runs that included the upstream sites (x-axis) and those where those sites were removed (y-axis). Colors correspond to the combination of site and origin (W for natural-origin, H for hatchery-origin), shape to the spawn year and the whiskers represent 95% confidence intervals. There is a dashed one-to-one line, and a blue linear regression line with a fixed intercept at zero is also shown."
+#| fig-pos: "H"
+
+escape_comp |>
+  unite(site_origin, location, origin, sep = "_") |> 
+  ggplot(aes(x = median_old,
+             y = median_new)) +
+  geom_abline(linetype = 2) +
+  geom_errorbar(aes(ymin = lower_ci_new,
+                    ymax = upper_ci_new,
+                    color = site_origin),
+                width = 0) +
+  geom_errorbar(aes(xmin = lower_ci_old,
+                    xmax = upper_ci_old,
+                    color = site_origin),
+                width = 0) +
+  geom_point(aes(shape = spawn_year,
+                 color = site_origin),
+             size = 4) +
+  geom_smooth(method = lm,
+              formula = y ~ x - 1) +
+  scale_color_brewer(palette = "Paired",
+                     name = "Site_Origin") +
+  labs(x = "Using All Sites",
+       y = "Removing Upper Sites",
+       title = "Escapement",
+       shape = "Year")
+```
+
+```{r}
+#| label: fig-escape-se
+#| fig-cap: "Plot of the standard error of the escapement estimates from model runs that included the upstream sites (x-axis) and those where those sites were removed (y-axis). Colors correspond to the arrays and shape to the spawn year. There is a dashed one-to-one line, and a blue linear regression line with a fixed intercept at zero is also shown."
+#| fig-pos: "H"
+
+escape_comp |>
+  unite(site_origin, location, origin, sep = "_") |> 
+  ggplot(aes(x = sd_old,
+             y = sd_new)) +
+  geom_abline(linetype = 2) +
+  geom_point(aes(color = site_origin,
+                 shape = spawn_year),
+             size = 4) +
+  geom_smooth(method = lm,
+              formula = y ~ x - 1) +
+  scale_color_brewer(palette = "Paired",
+                     name = "Site_Origin") +
+  labs(x = "Using All Sites",
+       y = "Removing Upper Sites",
+       title = "SE of Escapement",
+       shape = "Spawn\nYear")
+  
+```
+
+```{r}
+#| label: tbl-escape-err
+#| tbl-cap: "Summary statistics of the escapement errors associated with model runs without the upper sites. Statistics include mean error (ME) mean relative error (MRE), mean absolute error (MAE), mean absolute percent error (MAPE) and root mean squared error (RMSE)."
+
+bind_rows(
+  escape_comp |>
+    filter(!(location == "CHL" &
+               spawn_year == 2022)) |> 
+    mutate(err = median_new - median_old,
+           rel_err = err / median_old) |>
+    group_by(location,
+             origin) |>
+    summarize(ME = mean(err),
+              MRE = mean(rel_err) * 100,
+              MAE = mean(abs(err)),
+              MAPE = mean(abs(rel_err)) * 100,
+              RMSE = sqrt(mean(err^2)),
+              .groups = "drop"),
+  
+  escape_comp |>
+    mutate(err = median_new - median_old,
+           rel_err = err / median_old) |>
+    group_by(origin) |> 
+    summarize(ME = mean(err),
+              MRE = mean(rel_err) * 100,
+              MAE = mean(abs(err)),
+              MAPE = mean(abs(rel_err)) * 100,
+              RMSE = sqrt(mean(err^2))) |> 
+    add_column(location = "Overall")
+) |> 
+  rename(Location = location,
+         Origin = origin) |> 
+  flextable() |> 
+  set_header_labels(values = list("MRE" = "MRE (%)",
+                                  "MAPE" = "MAPE (%)")) |> 
+  colformat_double(j = c(3, 5, 7),
+                   digits = 3) |> 
+  colformat_double(j = c(4, 6),
+                   digits = 1) |> 
+  width(width = 0.8)
+
+```
+
+# Discussion
+
+Overall, removing these three upper sites had little effect on detection probability and escapement estimates. In general, the updated detection probabilities were sometimes biased slightly high, leading to escapement estimates that were biased slightly low. In the Chiwawa River in 2022, there were no detections on the CHL_U node, which forced the model to fix detection probability of the CHL_D node to 100%, leading to an underestimate of escapement to the Chiwawa. When the upper site, CHU, was included, detection probability of CHL_D could be estimated at 33% (@tbl-detect-est). 
+
+An upper site provides the most information to the model when it contains detections of tags that were not detected at the lower site. This happened only a handful of times in our example years (@tbl-tags). When the upper site did not detect any tags that weren't also detected at the lower site, the estimates of detection probability and escapement at the lower site weren't affected at all (other than slight variation due to MCMC sampling runs). 
+
+If the upper sites are removed, it is important for these results that the lower site be maintained such that the two arrays are as independent as possible, to meet the assumptions of DABOM. 
