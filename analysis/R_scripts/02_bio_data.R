@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: create tag lists to feed to PTAGIS query
 # Created: 8/15/2023
-# Last Modified: 10/8/2025
+# Last Modified: 8/27/2026
 # Notes:
 
 #-----------------------------------------------------------------
@@ -20,10 +20,11 @@ library(here)
 # this is a query set up on Kevin See's PTAGIS account, and finds every steelhead marked or recaptured
 # at Priest Rapids from June 1, 2010 through today
 sthd_tags <-
-  read_delim("https://api.ptagis.org/reporting/reports/kevinsee/file/PriestRapids_Sthd_SY2011_present.csv",
-             delim = ",",
-             locale = readr::locale(encoding = "UTF-16LE"),
-             show_col_types = FALSE) |>
+  read_delim(
+    "https://api.ptagis.org/reporting/reports/kevinsee/file/PriestRapids_Sthd_SY2011_present.csv",
+    delim = ",",
+    locale = readr::locale(encoding = "UTF-16LE"),
+    show_col_types = FALSE) |>
   clean_names() |>
   rename(tag_code = tag,
          event_capture_method_code = x5,
@@ -56,7 +57,7 @@ sthd_tags <-
 # since Spring Chinook sampling only occurred for 3 years
 sthd_tags <-
   sthd_tags |>
-  filter(!between(month(event_release_date_time), 1, 6))
+  filter_out(between(month(event_release_date), 1, 6))
 
 
 # pull out MRR data about all PIT tags from those MRR files
@@ -153,9 +154,11 @@ extra_tags <-
 extra_tags |>
   tabyl(spawn_year,
         event_type) |>
-  adorn_totals()
+  adorn_totals("both")
 # some are recoveries (i.e. died at Priest)
-# the rest are orphan or disowned tags (https://www.ptagis.org/FAQ#11); missing mark information
+# Some are orphan or disowned tags (https://www.ptagis.org/FAQ#11); missing mark information
+# 3D9.1BF27A5A27 is an orphan tag
+# 3DD.003DA168BC is disowned
 # in 2024, these 4 extra tags are actually the 2nd PIT tag in these fish
 extra_tags |>
   filter(event_type != "Recovery") |>
@@ -188,7 +191,10 @@ tagging_df <-
          str_detect(species_run_rear_type, "^30", negate = T), # ignore tags identified as rainbow trout
          str_detect(pit_tag, "\\.\\.\\.", negate = T))         # ignore strange tag numbers
 
-
+tagging_df |>
+  anti_join(sthd_tags |>
+              select(tag_code),
+            by = join_by(pit_tag == tag_code))
 
 #------------------------------------------------
 # # some second PIT tags only appear in text comments
@@ -330,7 +336,18 @@ bio_df <-
           release_date,
           pit_tag)
 
+# fix one record from SY2026
+# fish should not have 2nd PIT tag assigned to it
+bio_df <-
+  bio_df |>
+  mutate(across(second_pit_tag,
+                ~ case_when(spawn_year == 2026 &
+                              pit_tag == "3DD.0078DE18F0" ~ NA_character_,
+                            .default = .)))
+
+
 sum(bio_df$second_pit_tag %in% bio_df$pit_tag)
+sum(bio_df$pit_tag %in% bio_df$second_pit_tag)
 
 bio_df |>
   filter(second_pit_tag %in% pit_tag) |>
@@ -339,9 +356,9 @@ bio_df |>
   filter(pit_tag %in% second_pit_tag) |>
   as.data.frame()
 
-# there are 4 fish with duplicate records
+# there are 4 fish with duplicate records (all from SY2024)
 # one record lists 2 tags
-# the other lists only the 2nd tag as the primary one
+# the other lists only the 2nd tag as the primary one, with no 2nd tag
 # dropping the latter
 bio_df <-
   bio_df |>
@@ -383,18 +400,60 @@ sthd_tags |>
   as.data.frame()
 # only one left is a rainbow trout (SRR == 30W)
 
+#-----------------------------------------------------------------
+# QA / QC
+#-----------------------------------------------------------------
+
+# mis-match 1st and 2nd PIT tag codes
+sum(bio_df$second_pit_tag %in% bio_df$pit_tag)
+sum(bio_df$pit_tag %in% bio_df$second_pit_tag)
+
+# fish caught more than once
+bio_df |>
+  # filter(spawn_year == 2026) |>
+  filter(spawn_year >= 2025) |>
+  get_dupes(spawn_year,
+            pit_tag) |>
+  summarize(n_caps = n(),
+            n_marks = sum(event_type == "Mark"),
+            n_recaps = sum(event_type == "Recapture"),
+            time_between = difftime(max(event_date),
+                                    min(event_date),
+                                    units = "days"),
+            across(c(species_run_rear_type,
+                     origin,
+                     sex,
+                     cwt,
+                     ad_clip,
+                     length,
+                     conditional_comments),
+                   n_distinct),
+            lngth_diff = max(length, na.rm = T) - min(length, na.rm = T),
+            .by = c(spawn_year,
+                    pit_tag))
+
+# fish with 2nd PIT tag
+bio_df |>
+  # filter(spawn_year == 2026) |>
+  filter_out(is.na(second_pit_tag)) |>
+  select(spawn_year,
+         pit_tag) |>
+  left_join(bio_df)
 
 #-----------------------------------------------------------------
 # add age and final origin data from scales
-scale_age_files <- c("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/PIT Tag PRD Scale Ages Spawn Years 2011 to 2021.xlsx",
-                     "T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/PIT Tag PRD Scale Ages Run Years 2022 to present.xlsx")
+# scale_age_files <- c("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/PIT Tag PRD Scale Ages Spawn Years 2011 to 2021.xlsx",
+#                      "T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/PIT Tag PRD Scale Ages Run Years 2022 to present.xlsx")
 
 # scale_age_file <- "T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/PIT Tag PRD Scale Ages Spawn Years 2011 to present.xlsx"
 
 
 scale_age_df <-
-  # tibble(file_nm = scale_age_files) |>
-  tibble(folder = "T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data") |>
+  tibble(folder = file.path("T:",
+                            "DFW-Team FP Upper Columbia Escapement - General",
+                            "UC_Sthd",
+                            "inputs",
+                            "Bio Data")) |>
   mutate(file_name = map(folder, .f = list.files)) |>
   unnest(file_name) |>
   filter(str_detect(file_name, "Scale Ages")) |>
@@ -458,15 +517,14 @@ scale_age_df <-
 # which PIT tags are duplicated?
 dup_ages <-
   scale_age_df |>
-  unite(sy_pit,
-        spawn_year,
-        primary_pit_tag,
-        remove = F) |>
   filter(!is.na(age)) |>
-  filter(sy_pit %in% sy_pit[duplicated(sy_pit)]) |>
-  arrange(sy_pit)
+  get_dupes(spawn_year,
+            primary_pit_tag) |>
+  arrange(spawn_year,
+          primary_pit_tag)
 
 # and what are the ages associated with those?
+# for records with mis-matched ages
 if(nrow(dup_ages) > 0) {
   dup_ages |>
     arrange(primary_pit_tag,
@@ -482,19 +540,21 @@ if(nrow(dup_ages) > 0) {
                 values_from = age) |>
     # filter(`1` != "UNREADABLE",
     #        `2` != "UNREADABLE") |>
-    mutate(diff_ages = if_else(`1` == `2`, T, F)) |>
-    filter(!diff_ages)
+    mutate(same_ages = if_else(`1` == `2`, T, F)) |>
+    filter(!same_ages) |>
+    arrange(spawn_year,
+            primary_pit_tag) |>
+    as.data.frame()
 }
 
 # filter out rows for duplicated tags that have "UNREADABLE" or "NS" (no scales?) ages
 scale_age_df <-
   scale_age_df |>
   mutate(across(age,
-                ~ case_match(.,
-                             "NS" ~ NA_character_,
-                             "UNREADABLE" ~ NA_character_,
-                             "NA" ~ NA_character_,
-                             .default = .))) |>
+                ~ replace_values(.,
+                                 "NS" ~ NA_character_,
+                                 "UNREADABLE" ~ NA_character_,
+                                 "NA" ~ NA_character_))) |>
   unite(sy_pit,
         spawn_year, primary_pit_tag,
         remove = F) |>
@@ -506,17 +566,18 @@ scale_age_df <-
   #          # age %in% c("UNREADABLE",
   #          #            "NS"))) |>
   # for one tag with multiple ages, choose R.2 or W1.2 (Mike Hughes said so)
-  filter(!(primary_pit_tag == "3DD.003D552F68" &
-             age == "R.2")) |>
+  filter_out(primary_pit_tag == "3DD.003D552F68" &
+               age == "R.2") |>
   select(-sy_pit)
 
 # any more duplicated SY / tags?
 scale_age_df |>
-  unite(sy_pit,
-        spawn_year, primary_pit_tag,
-        remove = F) |>
-  filter(sy_pit %in% sy_pit[duplicated(sy_pit)]) |>
-  arrange(sy_pit)
+  filter(!is.na(age)) |>
+  get_dupes(spawn_year,
+            primary_pit_tag) |>
+  arrange(spawn_year,
+          primary_pit_tag)
+
 
 # differences in PTAGIS file names
 setdiff(unique(scale_age_df$ptagis_file_name), unique(bio_df$event_file))
@@ -528,6 +589,7 @@ bio_df |>
   filter(!pit_tag %in% scale_age_df$primary_pit_tag,
          !second_pit_tag %in% scale_age_df$primary_pit_tag) |>
   as.data.frame()
+# all from SY2011
 
 # pull out some information about those tags
 bio_df |>
@@ -552,13 +614,14 @@ bio_df |>
          age = if_else(is.na(age) & !is.na(age_v2),
                        age_v2,
                        age)) |>
-  filter(!age_data_exists) |>
+  filter_out(age_data_exists) |>
   arrange(event_date,
           pit_tag) |>
   select(spawn_year,
          pit_tag,
          species_run_rear_type,
          event_date,
+         release_date,
          event_type,
          contains("comments"),
          age) #|>
@@ -568,10 +631,38 @@ bio_df |>
 #   tabyl(spawn_year, event_month) |>
 #   adorn_totals(where = "both")
 
+scale_age_df |>
+  filter(!is.na(age)) |>
+  get_dupes(spawn_year,
+            primary_pit_tag) |>
+  arrange(spawn_year,
+          primary_pit_tag) |>
+  slice_max(spawn_year) |>
+  select(spawn_year,
+         pit_tag = primary_pit_tag,
+         age,
+         scale_id,
+         notes_comments) |>
+  distinct() |>
+  left_join(bio_df,
+            by = join_by(spawn_year,
+                         pit_tag,
+                         scale_id))
+
+# same tag in same SY, different ages
+scale_age_df |>
+  select(spawn_year,
+         pit_tag = primary_pit_tag,
+         age) |>
+  distinct() |>
+  get_dupes(spawn_year,
+            pit_tag)
+
+
 # what age data is associated with a tag not in our sample?
 scale_age_df |>
-  filter(!(primary_pit_tag %in% bio_df$pit_tag |
-             primary_pit_tag %in% bio_df$second_pit_tag)) |>
+  filter_out(primary_pit_tag %in% bio_df$pit_tag |
+             primary_pit_tag %in% na.omit(bio_df$second_pit_tag)) |>
   tabyl(spawn_year)
 
 scale_age_df |>
@@ -588,6 +679,7 @@ scale_age_df |>
 
 scale_age_df |>
   filter(primary_pit_tag == "3D9.1BF26E6B42")
+
 
 #-----------------------------------------
 # add scale data to bio_df
@@ -640,6 +732,15 @@ bio_age_df |>
               group_by(spawn_year) |>
               summarize(miss_age = sum(is.na(age))))
 
+bio_age_df |>
+  select(spawn_year,
+         pit_tag,
+         second_pit_tag,
+         age) |>
+  distinct() |>
+  get_dupes(spawn_year, pit_tag)
+
+
 #-----------------------------------------------------------------
 # reduce to one row per tag / spawn year
 bio_age_df |>
@@ -653,12 +754,12 @@ bio_age_df |>
 
 # look at duplicated records briefly
 bio_age_df |>
-  unite(sy_pit,
-        spawn_year, pit_tag,
-        remove = F) |>
-  filter(sy_pit %in% sy_pit[duplicated(sy_pit)]) |>
-  arrange(sy_pit) |>
-  select(spawn_year,
+  get_dupes(spawn_year,
+            pit_tag) |>
+  arrange(spawn_year,
+          pit_tag) |>
+  select(dupe_count,
+         spawn_year,
          pit_tag,
          event_file,
          release_date,
@@ -672,6 +773,7 @@ bio_age_df |>
          length,
          conditional_comments)
 
+# keep the Mark record, or the first recap
 bio_final_df <-
   bio_age_df |>
   relocate(release_date,
@@ -705,10 +807,8 @@ bio_final_df <-
   select(-data)
 
 bio_final_df |>
-  unite(sy_pit,
-        spawn_year, pit_tag,
-        remove = F) |>
-  select(sy_pit) |>
+  select(spawn_year,
+         pit_tag) |>
   distinct() |>
   nrow() |>
   identical(nrow(bio_final_df))
@@ -723,7 +823,8 @@ bio_final_df |>
                filter(!is.na(age)) |>
                select(spawn_year,
                       pit_tag = primary_pit_tag,
-                      age))
+                      age),
+             by = join_by(spawn_year, pit_tag))
 
 # any tags missing lengths that shouldn't be?
 bio_final_df |>
@@ -732,37 +833,159 @@ bio_final_df |>
 summary(bio_final_df)
 colSums(is.na(bio_final_df))
 
+# any tags from initial list missing in this final dataframe?
+sthd_tags |>
+  anti_join(bio_final_df |>
+              select(spawn_year,
+                     contains("pit_tag")) |>
+              pivot_longer(contains("pit_tag"),
+                           names_to = "position",
+                           values_to = "tag_code") |>
+              filter_out(is.na(tag_code)))
+
+
 #-----------------------------------------------------------------
 # read in genetics data, starting with SY2025
 gen_df <-
-  read_excel("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/Sex and Origin PRD-Brood Comparison Data/Genetics_PBT_GSI/AppendixI_OmyPRD2024(Jul01-Oct31).xlsx",
-             sheet = "PBT_GSI",
-             skip = 1) |>
-  clean_names() |>
-  rename(probability_gsi_1 = probability_19,
-         gsi_assignment_2 = x2nd_best_estimate,
-         probability_gsi_2 = probability_22,
+  tibble(gen_folder = file.path("T:",
+                                "DFW-Team FP Upper Columbia Escapement - General",
+                                "UC_Sthd",
+                                "inputs",
+                                "Bio Data",
+                                "Sex and Origin PRD-Brood Comparison Data",
+                                "Genetics_PBT_GSI")) |>
+  mutate(yr_folder = map(gen_folder, .f = list.files)) |>
+  unnest(yr_folder) |>
+  filter(str_detect(yr_folder, "^RY")) |>
+  mutate(folder = file.path(gen_folder, yr_folder)) |>
+  mutate(file_nm = map(folder, .f = list.files)) |>
+  unnest(file_nm) |>
+  filter(str_detect(file_nm, "\\.xls")) |>
+  filter(str_detect(file_nm, "Douglas -")) |>
+  mutate(sheet_nm = map2(folder,
+                         file_nm,
+                        .f = function(x, y) excel_sheets(file.path(x, y)))) |>
+  unnest(sheet_nm) |>
+  filter(sheet_nm == "PBT_GSI") |>
+  # as.data.frame()
+  # slice(2) |>
+  mutate(gen_data = pmap(list(x = folder,
+                                y = file_nm,
+                                z = sheet_nm),
+                           .f = function(x, y, z) {
+                             read_excel(file.path(x, y),
+                                        sheet = z,
+                                        skip = 1) |>
+                               clean_names() |>
+                               mutate(across(field_name,
+                                             as.character))
+                           },
+                           .progress = T)) |>
+  select(-c(gen_folder:sheet_nm)) |>
+  unnest(gen_data) |>
+  rename(gsi_assignment_2 = x2nd_best_estimate,
          gsi_assignment_3 = x3rd_best_estimate,
-         probability_gsi_3 = probability_24,
          byrne_statwk = byrn_estatwk,
          pit_tag = pit_tag_number,
          gen_rear = rear) |>
+  mutate(probability_gsi_1 = case_when(!is.na(probability_19) ~ probability_19,
+                                       !is.na(probability_18) ~ probability_18,
+                                       .default = NA_real_),
+         probability_gsi_2 = case_when(!is.na(probability_22) ~ probability_22,
+                                       !is.na(probability_21) ~ probability_21,
+                                       .default = NA_real_),
+         probability_gsi_3 = case_when(!is.na(probability_24) ~ probability_24,
+                                       !is.na(probability_23) ~ probability_23,
+                                       .default = NA_real_)) |>
+  select(-any_of(paste0("probability_", c(18:24)))) |>
+  mutate(spawn_year = sample_year + 1) |>
   # drop any row with no PIT tag number
   filter(!is.na(pit_tag)) |>
   # flip any PIT tag that's marked as the "secondary" PIT tag in the bio data
   left_join(bio_final_df |>
-              select(primary_pit_tag = pit_tag,
+              select(spawn_year,
+                     primary_pit_tag = pit_tag,
                      second_pit_tag),
-            by = join_by(pit_tag == second_pit_tag)) |>
+            by = join_by(spawn_year,
+                         pit_tag == second_pit_tag)) |>
   mutate(across(pit_tag,
                 ~ case_when(is.na(primary_pit_tag) ~ .,
-                             !is.na(primary_pit_tag) ~ primary_pit_tag,
+                            !is.na(primary_pit_tag) ~ primary_pit_tag,
                             .default = .))) |>
   select(-primary_pit_tag)
 
+# any duplicated tags?
+gen_df |>
+  get_dupes(spawn_year,
+            pit_tag) |>
+  as.data.frame()
+
+gen_df |>
+  get_dupes(spawn_year,
+            pit_tag) |>
+  select(spawn_year,
+         pit_tag) |>
+  distinct() |>
+  left_join(bio_final_df)
+
+bio_final_df |>
+  filter(spawn_year >= 2025) |>
+  anti_join(gen_df |>
+              select(spawn_year,
+                     pit_tag) |>
+              distinct())
+
+# drop the genetic duplicates where one of them is "failed"
+gen_df <-
+  gen_df |>
+  anti_join(gen_df |>
+              get_dupes(spawn_year,
+                        pit_tag) |>
+              select(spawn_year,
+                     pit_tag,
+                     assignment_method) |>
+              filter(assignment_method == "failed"))
+
+
+# gen_df <-
+#   read_excel(
+#     file.path("T:",
+#               "DFW-Team FP Upper Columbia Escapement - General",
+#               "UC_Sthd",
+#               "inputs",
+#               "Bio Data",
+#               "Sex and Origin PRD-Brood Comparison Data",
+#               "Genetics_PBT_GSI",
+#               "RY2024_SY2025",
+#               "2025_11_21 Douglas - AppendixI_OmyPRD2024(Jul01-Oct31).xlsx"),
+#     sheet = "PBT_GSI",
+#     skip = 1) |>
+#   clean_names() |>
+#   rename(probability_gsi_1 = probability_19,
+#          gsi_assignment_2 = x2nd_best_estimate,
+#          probability_gsi_2 = probability_22,
+#          gsi_assignment_3 = x3rd_best_estimate,
+#          probability_gsi_3 = probability_24,
+#          byrne_statwk = byrn_estatwk,
+#          pit_tag = pit_tag_number,
+#          gen_rear = rear) |>
+#   # drop any row with no PIT tag number
+#   filter(!is.na(pit_tag)) |>
+#   # flip any PIT tag that's marked as the "secondary" PIT tag in the bio data
+#   left_join(bio_final_df |>
+#               select(primary_pit_tag = pit_tag,
+#                      second_pit_tag),
+#             by = join_by(pit_tag == second_pit_tag)) |>
+#   mutate(across(pit_tag,
+#                 ~ case_when(is.na(primary_pit_tag) ~ .,
+#                              !is.na(primary_pit_tag) ~ primary_pit_tag,
+#                             .default = .))) |>
+#   select(-primary_pit_tag)
+
 bio_comp <-
   bio_final_df |>
-  # filter(spawn_year == 2025) |>
+  filter(spawn_year >= 2025) |>
+  # filter(spawn_year == 2026) |>
   mutate(snub_dorsal = str_detect(conditional_comments, "DF")) |>
   select(spawn_year,
          pit_tag,
@@ -783,7 +1006,6 @@ bio_comp <-
             by = join_by(spawn_year,
                          pit_tag)) |>
   left_join(gen_df |>
-              mutate(spawn_year = sample_year + 1) |>
               # filter(sample_year >= 2024) |>
               select(spawn_year,
                      pit_tag,
@@ -797,8 +1019,13 @@ bio_comp <-
                          pit_tag)) |>
   mutate(origin_final = case_when(ad_clip ~ "H",
                                   assignment_method == "PBT" ~ "H",
-                                  origin_scales == "H" ~ "H",
+                                  origin_sc_final == "H" ~ "H",
+                                  is.na(origin_sc_final) &
+                                    origin_scales == "H" ~ "H",
                                   assignment_method == "GSI" &
+                                    origin_sc_final == "W" ~ "W",
+                                  assignment_method == "GSI" &
+                                    is.na(origin_sc_final) &
                                     origin_scales == "W" ~ "W",
                                   origin_scales == "W" ~ "W",
                                   is.na(origin_scales) &
@@ -816,25 +1043,31 @@ bio_comp <-
            .after = origin_gen)
 
 bio_comp |>
-  filter(spawn_year == 2025) |>
   tabyl(origin_bio,
-        origin_final)
+        origin_final,
+        spawn_year)
 
 bio_comp |>
-  filter(spawn_year == 2025) |>
+  # filter(spawn_year >= 2025) |>
   tabyl(sex_gen,
-        sex_field) |>
+        sex_field,
+        spawn_year) |>
   adorn_totals("both") |>
   adorn_percentages() |>
   adorn_pct_formatting()
 
+# compile spreadsheet of changes that need to be made in PTAGIS
+# pick a minimum year
+min_yr = 2026
+
 list("Sex change" =
 
        bio_comp |>
-       filter(spawn_year == 2025) |>
+       filter(spawn_year >= min_yr) |>
        filter(sex_field != sex_gen,
               sex_gen != "Unknown") |>
-       select(pit_tag,
+       select(spawn_year,
+              pit_tag,
               conditional_comments,
               starts_with("sex")) |>
        mutate(to_do = "change sex in PTAGIS"),
@@ -842,17 +1075,20 @@ list("Sex change" =
      "Origin change" =
 
        bio_comp |>
-       filter(spawn_year == 2025) |>
+       filter(spawn_year >= min_yr) |>
        filter(origin_bio == "W",
               origin_final == "HNC") |>
-       select(pit_tag,
+       select(spawn_year,
+              pit_tag,
               cwt,
               ad_clip,
               snub_dorsal,
+              conditional_comments,
               age,
               origin_ptagis = origin_bio,
               origin_field,
               origin_scales,
+              origin_sc_final,
               origin_gen,
               origin_final,
               assignment_method) |>
@@ -861,31 +1097,47 @@ list("Sex change" =
                                    origin_scales == "H" ~ "Scale read",
                                  .default = NA_character_)) |>
        mutate(to_do = "change origin in PTAGIS")
-) #|>
-  # write_xlsx("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/Sex and Origin PRD-Brood Comparison Data/Genetics_PBT_GSI/PTAGIS_changes_2025.xlsx")
+) |>
+  write_xlsx(file.path("T:",
+                       "DFW-Team FP Upper Columbia Escapement - General",
+                       "UC_Sthd",
+                       "inputs",
+                       "Bio Data",
+                       "Sex and Origin PRD-Brood Comparison Data",
+                       "Genetics_PBT_GSI",
+                       "PTAGIS_changes.xlsx"))
 
 
-# bio_comp |>
-#   filter(origin_final != origin_gen) |>
-#   arrange(desc(assignment_method),
-#           origin_final,
-#           origin_gen,
-#           snub_dorsal,
-#           age,
-#           origin_scales) |>
-#   select(-starts_with("sex"),
-#          -origin_bio,
-#          -origin_sc_final,
-#          -species_run_rear_type) |>
-#   write_csv("O:Desktop/PRD2025_genetic_origin_comparison.csv")
+bio_comp |>
+  filter(origin_final != origin_gen) |>
+  arrange(desc(assignment_method),
+          spawn_year,
+          origin_ptagis = origin_bio,
+          origin_final,
+          origin_gen,
+          snub_dorsal,
+          age,
+          origin_scales) |>
+  select(-starts_with("sex"),
+         # -origin_bio,
+         # -origin_sc_final,
+         -species_run_rear_type) |>
+  filter(spawn_year == 2026)# |>
+  # write_csv(file.path("T:",
+  #                     "DFW-Team FP Upper Columbia Escapement - General",
+  #                     "UC_Sthd",
+  #                     "inputs",
+  #                     "Bio Data",
+  #                     "Sex and Origin PRD-Brood Comparison Data",
+  #                     "Genetics_PBT_GSI",
+  #                     "genetic_origin_comparison.csv"))
 
 
 
 bio_comp |>
   mutate(across(origin_final,
-                ~ case_match(.,
-                             "HNC" ~ "H",
-                             .default = .))) |>
+                ~ replace_values(.,
+                                 "HNC" ~ "H"))) |>
   filter(origin_final != origin_bio) |>
   filter(origin_final != origin_sc_final) |>
   tabyl(spawn_year)
@@ -916,7 +1168,7 @@ bio_final_df <-
   bio_final_df |>
   select(-c(assignment_method:gsi_prob)) |>
   left_join(gen_df |>
-              mutate(spawn_year = 2025) |>
+              mutate(spawn_year >= 2025) |>
               select(spawn_year,
                      pit_tag,
                      assignment_method,
@@ -976,7 +1228,7 @@ tag_list <-
 
 # just write the latest year
 tag_list |>
-  filter(spawn_year == max_yr) |>
+  slice_max(spawn_year) |>
   pull(data) |>
   extract2(1) |>
   write_delim(file = here("analysis",
@@ -1002,14 +1254,18 @@ save(sthd_tags,
 
 #-----------------------------------------------------------------
 # decode conditional comments
-cond_comm_codes <- read_csv(
-  paste0("T:/DFW-Team FP Upper Columbia Escapement - General/",
-         "UC_Sthd/inputs/PTAGIS/",
-         "Glossary_ConditionalComment_ValidationCodes.csv")) |>
+cond_comm_codes <-
+  read_csv(
+    file.path("T:",
+              "DFW-Team FP Upper Columbia Escapement - General/",
+              "UC_Sthd",
+              "inputs",
+              "PTAGIS",
+              "Glossary_ConditionalComment_ValidationCodes.csv")) |>
   clean_names()
 
 bio_final_df |>
-  filter(spawn_year == 2023) |>
+  filter(spawn_year == 2026) |>
   select(pit_tag,
          conditional_comments) |>
   # sample_n(1000) |>
