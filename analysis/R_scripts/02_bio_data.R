@@ -1252,6 +1252,12 @@ save(sthd_tags,
      file = here('analysis/data/derived_data',
                  paste0('Bio_Tag_Data_', min_yr, '_', max_yr, '.rda')))
 
+
+# save genetics data for later
+write_rds(gen_df,
+          file = here('analysis/data/derived_data',
+                      paste0('Genetic_Data_', min_yr, '_', max_yr, '.rds')))
+
 #-----------------------------------------------------------------
 # decode conditional comments
 cond_comm_codes <-
