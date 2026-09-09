@@ -31,14 +31,21 @@ ENA,ENA_D,Upper Entiat River at rkm 17.1,INT,778.017
 ENA,ENA_U,Upper Entiat River at rkm 17.1,INT,778.017
 ENM,ENA_U,Middle Entiat River,INT,778.026
 ENS,ENA_U,Upper Entiat River at rkm 35.7,INT,778.036
-ENF,ENF_D,Upper Entiat River at rkm 40.6,INT,778.041
-ENF,ENF_U,Upper Entiat River at rkm 40.6,INT,778.041
 ENL,ENL_D,Lower Entiat River,INT,778.002
 ENL,ENL_U,Lower Entiat River,INT,778.002
 FST,FST,Foster Creek,INT,868.001
 GLC,GLC_D,"Gold Creek, Methow River",INT,843.035.001
 GLC,GLC_U,"Gold Creek, Methow River",INT,843.035.001
 HST,HST_D,Touchet River at Harvey Shaw,INT,509.035.050
+BBT,HST_U,Touchet River at Bolles Bridge,INT,509.035.065
+COP,HST_U,Lower Coppei Instream Array,INT,509.035.082.001
+COPPEC,HST_U,Coppei Creek - tributary to Touchet River,MRR,509.035.082
+DAYP,HST_U,Dayton Acclimation Pond,MRR,509.035.087
+HST,HST_U,Touchet River at Harvey Shaw,INT,509.035.050
+JPT,HST_U,Juvenile Pond Touchet,INT,509.035.087
+PAT,HST_U,Pattit Creek Instream Site,INT,509.035.101.001
+PATITC,HST_U,Patit Creek - tributary to Touchet River,MRR,509.035.101
+TOUCHR,HST_U,Touchet River,MRR,509.035
 ICH,ICH_D,Ice Harbor Dam (Combined),INT,522.016
 ICL,ICL_D,Lower Icicle Instream Array,INT,754.041.000
 ICL,ICL_U,Lower Icicle Instream Array,INT,754.041.000
@@ -63,6 +70,7 @@ ABERC,JDA,"Abernathy Creek, Lower Columbia River, Washington",MRR,087
 ANTELC,JDA,Antelope Creek - tributary to Trout Creek (TROU2C) in the Deschutes River basin,MRR,328.140.021
 ASMEBR,JDA,Astoria-Megler Bridge ,MRR,012
 B1J,JDA,BONNEVILLE PH1 JUVENILE,INT,234
+B1S,JDA,Bonneville PH1 IT Sluiceway,INT,234
 B2A,JDA,BONNEVILLE ADULT WA SHORE,INT,234
 B2J,JDA,Bonneville PH2 Juvenile,INT,234
 BAD,JDA,Barrier Dam,MRR,111.080
@@ -178,6 +186,7 @@ ECH,JDA,Eagle Creek Hatchery Ladder,INT,163.040.026.020
 ECL,JDA,Eagle Creek Lower Fish Ladder,INT,163.040.026.010
 EFD,JDA,East Fork Diversion Fishway,INT,273.023.011
 EFHORC,JDA,"East Fork Horse Creek, McKenzie River Basin",MRR,163.282.101
+EGCFT,JDA,Eagle Cliff Screw Trap,MRR,140.085
 EIGH2C,JDA,"Eightmile Creek, Fifteenmile Creek Watershed",MRR,309.004
 ELRH,JDA,"Elochoman River Hatchery (Elochoman River, Washington)",MRR,058.019
 ESANIS,JDA,"East Sand Island, Columbia River",MRR,008
@@ -192,11 +201,16 @@ FOS,JDA,"Foster Dam, South Santiam River",MRR,163.174.019.060
 FOSFBY,JDA,FOS - Release into the Forebay within 0.5 km upstream of Dam,MRR,163.174.019.060
 FOSTAL,JDA,FOS - Release into the Tailrace within 0.5 km downstream of Dam,MRR,163.174.019.060
 FRFH,JDA,Fall River Fish Hatchery,MRR,328.324.011
+FTP,JDA,Foster Dam Tailrace Powerhouse,INT,163.174.019.060
+FTS,JDA,Foster Dam Tailrace Spillway,INT,163.174.019.060
+GB2,JDA,Gibbons Ck Above Lake,INT,200.002
+GBBNSC,JDA,"Gibbons Creek, tributary to Columbia River",MRR,200
 GEECR,JDA,"Gee Creek, Washington, lower Columbia River",MRR,140
 GERMC,JDA,"Germany Creek, Lower Columbia River, Washington",MRR,090
 GM1,JDA,Lower Germany Creek,INT,090.001
 GPD,JDA,Green Peter Dam,MRR,163.174.019.064.009
 GPDTAL,JDA,GPD - Release into the Tailrace within 0.5 km downstream of Dam,MRR,163.174.019.064.009
+GPT,JDA,Green Peter Dam Tailrace,INT,163.174.019.064.008
 GRAYSR,JDA,"Grays River, Washington, lower Columbia River",MRR,032
 GREENR,JDA,"Green River, trib. to NF Toutle River",MRR,111.032.028.018
 GREEPC,JDA,Green Point Creek (tributary to West Fork Hood River),MRR,273.020.002
@@ -329,10 +343,12 @@ ONTAC,JDA,"Oneonta Creek, Lower Columbia",MRR,222
 OPSH,JDA,DVWD Opal Springs Hatchery ,MRR,328.177.011
 PANT2C,JDA,"Panther Creek (trib. to Wind River, Wash.)",MRR,251.007
 PARK,JDA,Parkdale Hatchery,MRR,273.023.005.000
+PD4,JDA,Columbia River Steamboat Slgh,INT,054
 PD5,JDA,Columbia River Estuary rkm 62,INT,062
 PD6,JDA,Columbia River Estuary rkm 68,INT,068
 PD7,JDA,Columbia River Estuary rkm 70,INT,070
 PD8,JDA,Columbia River Estuary rkm 82,INT,072
+PDC,JDA,"Columbia River Rkm 76, Channel",INT,076
 PDO,JDA,Columbia River Rkm 75 OR,INT,075
 PDW,JDA,Columbia River Rkm 75 WA,INT,075
 PEL,JDA,Pelton Dam Ladder - Deschutes,INT,328.161
@@ -389,7 +405,7 @@ SULBPS,JDA,SUL - Release into the PIT-Tag Diversion System between the Diversion
 SULBYP,JDA,SUL - Release into the Facility Bypass Flume/Pipe,MRR,163.043
 SULFBY,JDA,SUL - Release into the Forebay within 0.5 km upstream of Dam,MRR,163.043
 SULFDS,JDA,SUL - Release above the Fish Diversion Screen,MRR,163.043
-SULSEP,JDA,SUL - Release into the Flume downsteam of the Collection/Bypass Gate or into the Separator,MRR,163.043
+SULSEP,JDA,SUL - Release into the Flume downstream of the Collection/Bypass Gate or into the Separator,MRR,163.043
 SULTRB,JDA,SUL - Release into Turbine(s),MRR,163.043
 SUMI3C,JDA,"Summit Creek, Klickitat River Basin",MRR,290.060
 SWALEC,JDA,Swale Creek - tributary to Klickitat River,MRR,290.028
@@ -471,12 +487,15 @@ LBC,LBC_D,"Libby Creek, Methow River",INT,843.042.001
 LBC,LBC_U,"Libby Creek, Methow River",INT,843.042.001
 LLC,LLC_D,Loup Loup Creek Instream Array,INT,858.028.001
 LLC,LLC_U,Loup Loup Creek Instream Array,INT,858.028.001
+LLF,LLF_U,Loup Loup Falls,INT,858.028.004
 LMB,LMR_D,Lower Methow River Barge,INT,843.001
 LMR,LMR_D,Lower Methow River at Pateros,INT,843.008
 LMR,LMR_U,Lower Methow River at Pateros,INT,843.008
 LNF,LNF_D,Leavenworth NFH Adult Ladder,INT,754.041.005
 LEAV,LNF_U,Leavenworth National Fish Hatchery,MRR,754.041.005
 LNF,LNF_U,Leavenworth NFH Adult Ladder,INT,754.041.005
+LOT,LOT_D,Lower Touchet River,INT,509.035.023
+LOT,LOT_U,Lower Touchet River,INT,509.035.023
 LWB,LWE_D,Lower Wenatchee Barge,INT,754.000
 LWE,LWE_D,Lower Wenatchee River,INT,754.003
 DRY,LWE_U,"Dryden Diversion Dam, Wenatchee River",MRR,754.028
@@ -494,6 +513,8 @@ MRU,MRU_D,Upper Methow River Array,INT,843.104
 MRU,MRU_U,Upper Methow River Array,INT,843.104
 MRW,MRW_D,Methow River at Winthrop,INT,843.085
 MRW,MRW_U,Methow River at Winthrop,INT,843.085
+MTB,MTB_D,Methow Train Bridge,INT,843.001
+MTB,MTB_U,Methow Train Bridge,INT,843.001
 NAL,NAL_D,Lower Nason Creek,INT,754.089.001
 NAL,NAL_U,Lower Nason Creek,INT,754.089.001
 NASONC,NAL_U,Nason Creek (tributary to Wenatchee River),MRR,754.089
@@ -514,8 +535,6 @@ OKS,OKS_D,Shingle Creek,INT,858.195.001
 OKS,OKS_U,Shingle Creek,INT,858.195.001
 OKV,OKV_D,"Vaseux Creek, BC, Canada",INT,858.163.001
 OKV,OKV_U,"Vaseux Creek, BC, Canada",INT,858.163.001
-OKW,OKW_D,Shuttleworth Creek,INT,858.175.001
-OKW,OKW_U,Shuttleworth Creek,INT,858.175.001
 OMF,OMF_D,Omak Creek above Mission Falls,INT,858.052.012
 OMF,OMF_U,Omak Creek above Mission Falls,INT,858.052.012
 OMH,OMH,Omak Creek Haley Creek Road,INT,858.052.020
@@ -529,7 +548,6 @@ PRA,PRA,Priest Rapids Adult,INT,639
 PRDLD1,PRA,PRD - Release into the Left Bank (facing downstream) Adult Fish Ladder,MRR,639
 PRH,PRH,Priest Rapids Hatchery Outfall,INT,635
 PRO,PRO_D,Prosser Diversion Dam Combined,INT,539.076
-PRV,PRV,Walla Walla R at Pierce RV Prk,INT,509.009
 RCT,RCT_D,Roaring Creek Temporary Array,INT,778.010.001
 RCT,RCT_U,Roaring Creek Temporary Array,INT,778.010.001
 RIA,RIA,Rock Island Adult,INT,730
@@ -537,8 +555,6 @@ RRF,RRF,Rocky Reach Fishway,INT,763
 RRJ,RRF,Rocky Reach Dam Juvenile,INT,763
 RSH,RSH_D,Ringold Springs Hatch. Outfall,INT,567
 RSH,RSH_U,Ringold Springs Hatch. Outfall,INT,567
-SA0,SA0_D,Salmon Creek below OID Div.,INT,858.041.006
-SA0,SA0_U,Salmon Creek below OID Div.,INT,858.041.006
 SA1,SA1_D,Salmon Creek Instream Array,INT,858.041.003
 SA1,SA1_U,Salmon Creek Instream Array,INT,858.041.003
 SAD,SAD,Salmon Creek Above OID Div.,INT,858.041.009
@@ -565,5 +581,7 @@ WHS,WHS,Wildhorse Spring Creek,INT,858.114.001
 WTL,WTL_D,"White River, Wenatchee Basin",INT,754.090.003
 WHITER,WTL_U,"White River, Wenatchee River Basin",MRR,754.090
 WTL,WTL_U,"White River, Wenatchee Basin",INT,754.090.003
+WWB,WWB_D,Walla Walla River Barge Array,INT,509.005
+WWB,WWB_U,Walla Walla River Barge Array,INT,509.005
 ZSL,ZSL_D,Zosel Dam Combined,INT,858.132
 ZSL,ZSL_U,Zosel Dam Combined,INT,858.132

@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: Develop configuration file for DABOM
 # Created: 4/1/20
-# Last Modified: 10/6/25
+# Last Modified: 9/9/26
 # Notes:
 #
 # # install some needed packages
@@ -65,9 +65,10 @@ configuration <-
          !(site_code == 'TMF' & site_type == 'MRR'),
          !(site_code == 'PRO' & site_type == 'MRR')) %>%
   mutate(across(node,
+                # mainstem
                 ~ case_when(site_code %in% c('RIA', 'RRF', 'WEA', 'PRV', 'PRH') ~ site_code,
                             site_code == 'PRDLD1' ~ "PRA",
-                            . == "LWE" ~ "LWE_D",
+                            # Wenatchee
                             site_code == "LWB" ~ "LWE_D",
                             # any fish seen at Dryden dam should also be seen at LWE
                             site_code == 'DRY' ~ "LWE_U",
@@ -78,14 +79,16 @@ configuration <-
                             site_code == 'ICL' & config_id == 100 ~ "ICL_D",
                             site_code == 'CHIWAC' ~ "CHW_U",
                             site_code == 'CHIWAR' ~ "CHL_U",
+                            # fish seen at the Chiwawa weir get lumped with CHL
                             site_code == "CWT" ~ "CHL_U",
+                            # any fish seen at Chiwawa acclimation pond gets moved to CHL
+                            site_code == 'CHP' ~ 'CHL_U',
                             site_code == 'WHITER' ~ "WTL_U",
                             site_code == 'LWENAT' ~ "LWN_U",
                             site_code == 'NASONC' ~ "NAL_U",
-                            # any fish seen at Chiwawa acclimation pond gets moved to CHL
-                            site_code == 'CHP' ~ 'CHL_U',
                             site_code == 'EBO' ~ "EBO_D",
                             site_code == 'RRJ' ~ 'RRF',
+                            # Entiat
                             site_code == "MAD" & config_id == 110 & antenna_id == "01" ~ "MAD_U",
                             site_code == 'EHL' & config_id == 100 & antenna_id == '02' ~ 'EHL_D',
                             site_code == 'EHL' & config_id == 100 & antenna_id == '01' ~ 'EHL_U',
@@ -95,10 +98,12 @@ configuration <-
                             site_code %in% c("ENS", "ENM") ~ "ENA_U",
                             site_code == "WEH" & antenna_id == "A2" ~ "WEH_D",
                             site_code == "WEH" & antenna_id != "A2" ~ "WEH_U",
+                            # Methow
                             site_code == "LMB" ~ "LMR_D",
                             site_code == 'MRC' ~ 'MRC_D',
                             site_code %in% c('SSC', '18N', 'MHB', 'M3R', 'MWF') ~ 'MRC_U',
                             site_code == 'LLC' & config_id == 100 & antenna_id %in% c("D1", "D2") ~ "LLC_U",
+                            # Okanogan
                             # ZSL has definitive up/down antennas in initial configurations, but it gets more complicated after that
                             site_code == "ZSL" &
                               str_detect(antenna_group,
@@ -116,6 +121,7 @@ configuration <-
                             site_code == 'BPC' &
                               config_id == 100 &
                               antenna_id %in% c("C3") ~ "BPC_D",
+                            # Downstream sites
                             site_code == 'PRO' & site_type == 'INT' ~ 'PRO_D',
                             # grab all sites upstream of Prosser dam, and assign them to PRO_U
                             site_code != "PRO" &
@@ -125,14 +131,17 @@ configuration <-
                             site_code != "ICH" &
                               as.integer(stringr::str_split_i(rkm, '\\.', 1)) == 522 &
                               rkm_total > 538 ~ 'ICH_U',
+                            site_code == "PRV" ~ "WWB",
                             site_code == 'MDR' ~ 'MDR_D',
                             site_code != "MDR" &
                               as.integer(stringr::str_split_i(rkm, '\\.', 1)) == 509 &
                               as.integer(stringr::str_split_i(rkm, '\\.', 2)) >= 41 ~ "MDR_U",
-                            site_code == 'HST' ~ 'HST_D',
+                            # site_code == 'HST' ~ 'HST_D',
                             site_code != "HST" &
                               as.integer(stringr::str_split_i(rkm, '\\.', 1)) == 509 &
-                              as.integer(stringr::str_split_i(rkm, '\\.', 2)) == 35 ~ "HST_U",
+                              as.integer(stringr::str_split_i(rkm, '\\.', 2)) == 35 &
+                              as.integer(stringr::str_split_i(rkm, '\\.', 3)) > 50 ~ "HST_U",
+                            site_code == "TOUCHR" ~ "HST_U",
                             site_code != "JD1" &
                               as.integer(stringr::str_split_i(rkm, '\\.', 1)) == 351 ~ "JD1_U",
                             site_code == 'JD1' ~ 'JD1_D',
@@ -172,10 +181,10 @@ sites_sf <-
   rename(site_code = SiteID) %>%
   select(site_code) |>
   # filter out site at the Methow Fish Hatchery, we're not going to use them
-  filter(!site_code %in% c("MSH",
-                           "METH")) |>
+  filter_out(site_code %in% c("MSH",
+                              "METH")) |>
   # drop UWE in the upper Wenatchee, as it was removed in 2024
-  filter(!site_code %in% c("UWE")) |>
+  filter_out(site_code %in% c("UWE")) |>
   # add a few sites in the Okanogan region
   # exclude CHJO because fish detected there have some strange detection histories
   bind_rows(
@@ -194,20 +203,34 @@ sites_sf <-
   # add a site in the upper Methow
   bind_rows(
     tibble(
-      site_code = c("MRU")
+      site_code = c("MRU",
+                    "MTB")
     )
   ) |>
+  # add some sites in the Walla Walla
+  bind_rows(
+    tibble(
+      site_code = c("WWB",
+                    "LOT")
+    )
+  ) |>
+  # drop a few sites
+  filter_out(site_code %in% c("UWE",
+                              "ENF",
+                              "SA0",
+                              "OKW",
+                              "PRV")) |>
   left_join(configuration,
             by = join_by(site_code)) %>%
-  group_by(site_code) %>%
-  filter(config_id == max(config_id)) %>%
-  ungroup() %>%
+  slice_max(config_id,
+            by = site_code) |>
   select(site_code,
          site_name,
          site_type = site_type_name,
          type = site_type,
          rkm,
          site_description = site_description,
+         end_date,
          latitude, longitude) %>%
   distinct() %>%
   filter(!is.na(latitude)) %>%
@@ -217,28 +240,69 @@ sites_sf <-
   st_transform(crs = 5070)
 
 #-----------------------------------------------------------------
+library(ggmap)
+# library(nhdplusTools)
+# library(hydrogeofetch)
+
 # download the NHDPlus v2 flowlines
 # upstream extent of study area (cut off areas further upstream)
-upstrm_loc = "Chief Joseph Dam"
+# upstrm_loc = "Chief Joseph Dam"
 
-library(ggmap)
+upstrm_loc = c("Chief Joseph Dam",
+               "Ice Harbor Dam")
 
-upstrm_comid = ggmap::geocode(upstrm_loc, output = "latlon") %>%
+upstrm_comid <-
+  ggmap::geocode(upstrm_loc,
+                 output = "latlon") |>
   st_as_sf(coords = c("lon", "lat"),
-           crs = 4326) %>%
-  nhdplusTools::discover_nhdplus_id()
+            crs = 4326) |>
+  add_column(loc_nm = upstrm_loc,
+             .before = 0) |>
+  # include Crab Creek
+  bind_rows(tibble(loc_nm = "Crab Creek",
+                   lon = -119.913914,
+                   lat = 46.822091) |>
+              st_as_sf(coords = c("lon", "lat"),
+                       crs = 4326)) |>
+  # # include John Day basin upstream of JD1
+  # bind_rows(sites_sf |>
+  #             filter(site_code == "JD1") |>
+  #             select(loc_nm = site_code,
+  #                    geometry) |>
+  #             st_transform(crs = 4326)) |>
+  rowwise() |>
+  mutate(comid = hydrogeofetch::discover_nhdplus_id(geometry)) |>
+  ungroup()
+
+# if discover_nhdplus_id fails, I think COMID for Chief Joseph Dam is 23057622
+# upstrm_comid <- 23057622
+# Lower Crab Creek
+# upstrm_cc <-
+#   st_point(c(-119.913914,
+#            46.822091)) |>
+#   st_sfc(crs = 4326) |>
+#   hydrogeofetch::discover_nhdplus_id()
+#
+#
+#
+# upstrm_comid <-
+#   c(upstrm_comid,
+#     upstrm_cc)
 
 # do you want flowlines downstream of root site? Set to TRUE if you have downstream sites
-dwn_flw = T
+# dwn_flw = T
 nhd_list = queryFlowlines(sites_sf = sites_sf,
                           root_site_code = root_site,
                           min_strm_order = 2,
-                          max_upstream_comid = upstrm_comid,
-                          combine_up_down = dwn_flw)
+                          max_upstream_comid = upstrm_comid$comid)
 
 # compile the upstream and downstream flowlines
 flowlines = nhd_list$flowlines
 
+
+# flowlines <-
+#   st_read(here("analysis/data/derived_data",
+#                "UC_flowlines.gpkg"))
 #-----------------------------------------------------------------
 # plot the flowlines and the sites
 ggplot() +
@@ -251,9 +315,9 @@ ggplot() +
                         end = 0.9) +
   scale_linewidth_continuous(range = c(0.2, 2),
                              name = "Stream\nOrder") +
-  # geom_sf(data = nhd_list$basin,
-  #         fill = NA,
-  #         lwd = 2) +
+  geom_sf(data = nhd_list$basin,
+          fill = NA,
+          lwd = 2) +
   geom_sf(data = sites_sf,
           size = 4,
           color = "black") +
@@ -294,7 +358,7 @@ parent_child <-
                                   c("JDA", 'JD1', "PRA"),
                                   c("JDA", 'PRO', "PRA"),
                                   c("JDA", 'TMF', "PRA"),
-                                  c("JDA", 'PRV', "PRA"),
+                                  c("JDA", 'WWB', "PRA"),
                                   c("RSH", 'PRH', 'PRA'),
                                   c(NA, "JDA", 'PRA'),
                                   c("ICL", 'TUM', "LWE"),
@@ -308,6 +372,7 @@ parent_child <-
                                   c("EBO", "WEA", 'RRF'),
                                   c("EBO", "ENL", 'RRF'),
                                   c("WEH", "LMR", "WEA"),
+                                  c("WEH", "MTB", "WEA"),
                                   c("WEH", "OKL", "WEA"),
                                   c("WEH", "FST", 'WEA'),
                                   c("EHL", 'ENA', 'ENL'),
@@ -344,7 +409,7 @@ paths <-
 
 test_sites <-
   paths |>
-  filter(str_detect(path, "MRC")) |>
+  filter(str_detect(path, "WWB")) |>
   pull(end_loc)
 parent_child |>
   filter(parent %in% test_sites |
