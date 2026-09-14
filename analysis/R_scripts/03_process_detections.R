@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: clean PTAGIS data with PITcleanr
 # Created: 4/27/20
-# Last Modified: 11/25/25
+# Last Modified: 9/14/26
 # Notes:
 
 # if needed, install development version of packages
@@ -23,12 +23,12 @@ library(here)
 load(here('analysis/data/derived_data/site_config.rda'))
 
 # which spawn year are we dealing with?
-yr = 2025
+yr = 2026
 
 # for(yr in 2011:2023) {
 
 # load and file biological data
-bio_df = read_rds(here('analysis/data/derived_data/Bio_Data_2011_2025.rds')) %>%
+bio_df = read_rds(here('analysis/data/derived_data/Bio_Data_2011_2026.rds')) %>%
   filter(spawn_year == yr)
 
 # any double-tagged fish?
@@ -139,7 +139,8 @@ if(nrow(dbl_tag) > 0) {
                              names_to = "source",
                              values_to = "tag_code") %>%
                 select(tag_code, use_tag) |>
-                filter(tag_code != use_tag),
+                filter(tag_code != use_tag) |>
+                distinct(),
               by = "tag_code") %>%
     mutate(across(tag_code,
                   ~ case_when(!is.na(use_tag) &
@@ -165,13 +166,15 @@ prepped_ch <-
                          add_tag_detects = T,
                          save_file = F,
                          # file_name = here('outgoing/PITcleanr', paste0('UC_Steelhead_', yr, '.xlsx')))
-                         file_name = paste0("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd",
-                                            "/inputs",
-                                            "/PITcleanr",
-                                            "/PITcleanr Initial",
-                                            "/UC_Steelhead_",
-                                            yr,
-                                            ".xlsx"))
+                         file_name = file.path("T:",
+                                               "DFW-Team FP Upper Columbia Escapement - General",
+                                               "UC_Sthd",
+                                               "inputs",
+                                               "PITcleanr",
+                                               "PITcleanr Initial",
+                                               paste0("UC_Steelhead_",
+                                                      yr,
+                                                      ".xlsx")))
 
 # Sort through some tags detected at JDA (or downstream)
 # try to determine which are kelt migrations where we should keep other upstream detections,
@@ -216,49 +219,56 @@ jda_prepped <-
                    max_obs_date = max_obs_date) |>
   select(all_of(names(prepped_ch)))
 
-
+# add JDA detection back in
 prepped_ch <-
-  prepped_ch |>
-  left_join(jda_prepped |>
-              rename(new_auto = auto_keep_obs,
-                     new_user = user_keep_obs)) |>
+  jda_prepped |>
+  rename(new_auto = auto_keep_obs,
+         new_user = user_keep_obs) |>
   group_by(tag_code) |>
-  mutate(need_fix = case_when(sum(is.na(user_keep_obs)) > 0 ~ T,
-                              sum(is.na(user_keep_obs)) == 0 ~ F,
-                              .default = NA)) |>
+  mutate(still_fix = if_else(sum(is.na(new_user)) > 0, T, F)) |>
+  ungroup() |>
+  bind_rows(
+    prepped_ch |>
+      filter(tag_code %in% jda_tags$tag_code,
+             node == "JDA")) |>
+  arrange(tag_code, slot) |>
+  fill(still_fix,
+       .direction = "down") |>
+  mutate(fix_tag = if_else(tag_code %in% jda_tags$tag_code,
+                           T, F)) |>
+  group_by(tag_code) |>
   mutate(across(auto_keep_obs,
-                ~ case_when(tag_code %in% jda_tags$tag_code &
+                ~ case_when(fix_tag &
                               node != "JDA" ~ new_auto,
-                            tag_code %in% jda_tags$tag_code &
+                            fix_tag &
                               node == "JDA" ~ FALSE,
-                            .default = .)),
-         across(user_keep_obs,
-                ~ case_when(tag_code %in% jda_tags$tag_code &
+                            .default = .))) |>
+  mutate(across(user_keep_obs,
+                ~ case_when(still_fix ~ NA,
+                            !still_fix &
                               node != "JDA" ~ new_user,
-                            tag_code %in% jda_tags$tag_code &
-                              !need_fix &
+                            !still_fix &
                               node == "JDA" ~ FALSE,
-                            tag_code %in% jda_tags$tag_code &
-                              need_fix &
-                              node == "JDA" &
-                              !is.na(new_user) ~ new_user,
-                            tag_code %in% jda_tags$tag_code &
-                              need_fix &
-                              node == "JDA" &
-                              is.na(new_user) ~ FALSE,
                             .default = .))) |>
   ungroup() |>
-  select(all_of(names(prepped_ch)))
+  select(all_of(names(prepped_ch))) |>
+  bind_rows(prepped_ch |>
+              filter_out(tag_code %in% jda_tags$tag_code)) |>
+  arrange(tag_code,
+          slot)
+
 
 # overwrite Excel file
 prepped_ch |>
-  writexl::write_xlsx(path = paste0("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd",
-                                    "/inputs",
-                                    "/PITcleanr",
-                                    "/PITcleanr Initial",
-                                    "/UC_Steelhead_",
-                                    yr,
-                                    ".xlsx"))
+  writexl::write_xlsx(path = file.path("T:",
+                                       "DFW-Team FP Upper Columbia Escapement - General",
+                                       "UC_Sthd",
+                                       "inputs",
+                                       "PITcleanr",
+                                       "PITcleanr Initial",
+                                       paste0("UC_Steelhead_",
+                                              yr,
+                                              ".xlsx")))
 
 
 # save some stuff
@@ -398,10 +408,15 @@ load(here('analysis/data/derived_data/PITcleanr',
 
 # read in PITcleanr output that's been reviewed by WDFW biologist
 wdfw_df <-
-  read_excel(paste0("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/PITcleanr/PITcleanr Final/",
-                    "UC_Steelhead_",
-                    yr,
-                    ".xlsx")) |>
+  read_excel(file.path("T:",
+                       "DFW-Team FP Upper Columbia Escapement - General",
+                       "UC_Sthd",
+                       "inputs",
+                       "PITcleanr",
+                       "PITcleanr Final",
+                       paste0("UC_Steelhead_",
+                              yr,
+                              ".xlsx"))) |>
   mutate(across(c(duration,
                   travel_time),
                 ~ as.difftime(., units = "mins"))) |>
