@@ -533,7 +533,7 @@ node_order = buildNodeOrder(parent_child) %>%
                                      "Wenatchee",
                                      if_else(grepl("ENL", path),
                                              "Entiat",
-                                             if_else(grepl("LMR", path),
+                                             if_else(grepl("MTB", path),
                                                      "Methow",
                                                      if_else(grepl("OKL", path) | node %in% c("FST"),
                                                              "Okanogan",
