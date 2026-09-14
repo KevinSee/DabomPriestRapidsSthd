@@ -330,7 +330,7 @@ dam_cnt_name = c("PriestRapids",
                                                        reasc_rate_se,
                                                        prop_org_se)^2))) %>%
     ungroup() %>%
-    # add estimated transistion parameters
+    # add estimated transition parameters
     left_join(trans_summ %>%
                 filter(param %in% c("RIA", "RRF")) %>%
                 select(origin,
