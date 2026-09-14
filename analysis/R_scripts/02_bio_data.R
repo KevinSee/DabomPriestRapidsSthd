@@ -1,7 +1,7 @@
 # Author: Kevin See
 # Purpose: create tag lists to feed to PTAGIS query
 # Created: 8/15/2023
-# Last Modified: 8/27/2026
+# Last Modified: 9/14/2026
 # Notes:
 
 #-----------------------------------------------------------------
@@ -336,15 +336,6 @@ bio_df <-
           release_date,
           pit_tag)
 
-# fix one record from SY2026
-# fish should not have 2nd PIT tag assigned to it
-bio_df <-
-  bio_df |>
-  mutate(across(second_pit_tag,
-                ~ case_when(spawn_year == 2026 &
-                              pit_tag == "3DD.0078DE18F0" ~ NA_character_,
-                            .default = .)))
-
 
 sum(bio_df$second_pit_tag %in% bio_df$pit_tag)
 sum(bio_df$pit_tag %in% bio_df$second_pit_tag)
@@ -631,8 +622,9 @@ bio_df |>
 #   tabyl(spawn_year, event_month) |>
 #   adorn_totals(where = "both")
 
+# duplicate records from latest spawn year
 scale_age_df |>
-  filter(!is.na(age)) |>
+  filter_out(is.na(age)) |>
   get_dupes(spawn_year,
             primary_pit_tag) |>
   arrange(spawn_year,
@@ -947,41 +939,20 @@ gen_df <-
               filter(assignment_method == "failed"))
 
 
-# gen_df <-
-#   read_excel(
-#     file.path("T:",
-#               "DFW-Team FP Upper Columbia Escapement - General",
-#               "UC_Sthd",
-#               "inputs",
-#               "Bio Data",
-#               "Sex and Origin PRD-Brood Comparison Data",
-#               "Genetics_PBT_GSI",
-#               "RY2024_SY2025",
-#               "2025_11_21 Douglas - AppendixI_OmyPRD2024(Jul01-Oct31).xlsx"),
-#     sheet = "PBT_GSI",
-#     skip = 1) |>
-#   clean_names() |>
-#   rename(probability_gsi_1 = probability_19,
-#          gsi_assignment_2 = x2nd_best_estimate,
-#          probability_gsi_2 = probability_22,
-#          gsi_assignment_3 = x3rd_best_estimate,
-#          probability_gsi_3 = probability_24,
-#          byrne_statwk = byrn_estatwk,
-#          pit_tag = pit_tag_number,
-#          gen_rear = rear) |>
-#   # drop any row with no PIT tag number
-#   filter(!is.na(pit_tag)) |>
-#   # flip any PIT tag that's marked as the "secondary" PIT tag in the bio data
-#   left_join(bio_final_df |>
-#               select(primary_pit_tag = pit_tag,
-#                      second_pit_tag),
-#             by = join_by(pit_tag == second_pit_tag)) |>
-#   mutate(across(pit_tag,
-#                 ~ case_when(is.na(primary_pit_tag) ~ .,
-#                              !is.na(primary_pit_tag) ~ primary_pit_tag,
-#                             .default = .))) |>
-#   select(-primary_pit_tag)
+# get some broodstock data
+brood_df <-
+  read_excel(file.path("T:",
+                       "DFW-Team FP Upper Columbia Escapement - General",
+                       "UC_Sthd",
+                       "inputs",
+                       "Bio Data",
+                       "Sex and Origin PRD-Brood Comparison Data",
+                       "STHD UC Brood Collections_2011 to current.xlsx"),
+             sheet = 1) |>
+  clean_names() |>
+  rename(pit_tag = recaptured_pit)
 
+# make a big comparison file
 bio_comp <-
   bio_final_df |>
   filter(spawn_year >= 2025) |>
@@ -1017,6 +988,12 @@ bio_comp <-
                      probability_gsi_1),
             by = join_by(spawn_year,
                          pit_tag)) |>
+  left_join(brood_df |>
+              select(spawn_year,
+                     pit_tag,
+                     sex_brood = sex_final,
+                     origin_brood = origin_final,
+                     brood_status = handling_status_spawning)) |>
   mutate(origin_final = case_when(ad_clip ~ "H",
                                   assignment_method == "PBT" ~ "H",
                                   origin_sc_final == "H" ~ "H",
@@ -1090,6 +1067,7 @@ list("Sex change" =
               origin_scales,
               origin_sc_final,
               origin_gen,
+              origin_brood,
               origin_final,
               assignment_method) |>
        mutate(reason = case_when(assignment_method == "PBT" ~ "PBT assignment",
@@ -1097,15 +1075,15 @@ list("Sex change" =
                                    origin_scales == "H" ~ "Scale read",
                                  .default = NA_character_)) |>
        mutate(to_do = "change origin in PTAGIS")
-) |>
-  write_xlsx(file.path("T:",
-                       "DFW-Team FP Upper Columbia Escapement - General",
-                       "UC_Sthd",
-                       "inputs",
-                       "Bio Data",
-                       "Sex and Origin PRD-Brood Comparison Data",
-                       "Genetics_PBT_GSI",
-                       "PTAGIS_changes.xlsx"))
+) #|>
+  # write_xlsx(file.path("T:",
+  #                      "DFW-Team FP Upper Columbia Escapement - General",
+  #                      "UC_Sthd",
+  #                      "inputs",
+  #                      "Bio Data",
+  #                      "Sex and Origin PRD-Brood Comparison Data",
+  #                      "Genetics_PBT_GSI",
+  #                      "PTAGIS_changes.xlsx"))
 
 
 bio_comp |>
@@ -1118,19 +1096,20 @@ bio_comp |>
           snub_dorsal,
           age,
           origin_scales) |>
-  select(-starts_with("sex"),
+  select(-starts_with("sex")) |>
          # -origin_bio,
          # -origin_sc_final,
-         -species_run_rear_type) |>
-  filter(spawn_year == 2026)# |>
-  # write_csv(file.path("T:",
-  #                     "DFW-Team FP Upper Columbia Escapement - General",
-  #                     "UC_Sthd",
-  #                     "inputs",
-  #                     "Bio Data",
-  #                     "Sex and Origin PRD-Brood Comparison Data",
-  #                     "Genetics_PBT_GSI",
-  #                     "genetic_origin_comparison.csv"))
+         # -species_run_rear_type) |>
+  # filter(spawn_year == 2025)
+  filter(spawn_year == 2026) |>
+  write_csv(file.path("T:",
+                      "DFW-Team FP Upper Columbia Escapement - General",
+                      "UC_Sthd",
+                      "inputs",
+                      "Bio Data",
+                      "Sex and Origin PRD-Brood Comparison Data",
+                      "Genetics_PBT_GSI",
+                      "genetic_origin_comparison.csv"))
 
 
 
@@ -1166,7 +1145,7 @@ bio_comp |>
 #-----------------------------------------------------------------
 bio_final_df <-
   bio_final_df |>
-  select(-c(assignment_method:gsi_prob)) |>
+  # select(-c(assignment_method:gsi_prob)) |>
   left_join(gen_df |>
               mutate(spawn_year >= 2025) |>
               select(spawn_year,
@@ -1254,9 +1233,11 @@ save(sthd_tags,
 
 
 # save genetics data for later
-write_rds(gen_df,
-          file = here('analysis/data/derived_data',
-                      paste0('Genetic_Data_', min_yr, '_', max_yr, '.rds')))
+gen_df |>
+  # filter(spawn_year >= 2025) |>
+  write_rds(file = here('analysis/data/derived_data',
+                      paste0('Genetic_Data_', min(gen_df$spawn_year), '_', max(gen_df$spawn_year), '.rds')))
+                      # paste0('Genetic_Data_2025_', max(gen_df$spawn_year), '.rds')))
 
 #-----------------------------------------------------------------
 # decode conditional comments
