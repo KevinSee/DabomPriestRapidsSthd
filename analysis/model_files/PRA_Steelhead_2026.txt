@@ -6,24 +6,24 @@ model {
 	 ICH_U_p ~ dbeta(1, 1);
 	 JD1_D_p ~ dbeta(1, 1);
 	 JD1_U_p ~ dbeta(1, 1);
-	 JDA_p ~ dbeta(1, 1);
-	 PRH_p ~ dbeta(1, 1);
+	 JDA_p <- 1; # Single array, no upstream detections
+	 PRH_p <- 1; # Single array, no upstream detections
 	 PRO_D_p ~ dbeta(1, 1);
 	 PRO_U_p ~ dbeta(1, 1);
 	 RIA_p ~ dbeta(1, 1);
-	 CLK_p ~ dbeta(1, 1);
+	 CLK_p <- 0; # no detections / not in operation
 	 LWE_D_p ~ dbeta(1, 1);
 	 LWE_U_p ~ dbeta(1, 1);
 	 CHM_D_p ~ dbeta(1, 1);
 	 CHM_U_p ~ dbeta(1, 1);
 	 ICL_D_p ~ dbeta(1, 1);
 	 ICL_U_p ~ dbeta(1, 1);
-	 ICM_D_p ~ dbeta(1, 1);
-	 ICM_U_p ~ dbeta(1, 1);
-	 ICU_D_p ~ dbeta(1, 1);
-	 ICU_U_p ~ dbeta(1, 1);
-	 LNF_D_p ~ dbeta(1, 1);
-	 LNF_U_p ~ dbeta(1, 1);
+	 ICM_D_p <- 0; # no detections / not in operation
+	 ICM_U_p <- 0; # no detections / not in operation
+	 ICU_D_p <- 0; # no detections / not in operation
+	 ICU_U_p <- 0; # no detections / not in operation
+	 LNF_D_p <- 0; # no detections / not in operation
+	 LNF_U_p <- 0; # no detections / not in operation
 	 MCL_D_p ~ dbeta(1, 1);
 	 MCL_U_p ~ dbeta(1, 1);
 	 PES_D_p ~ dbeta(1, 1);
@@ -35,30 +35,30 @@ model {
 	 CHL_U_p ~ dbeta(1, 1);
 	 CHU_D_p ~ dbeta(1, 1);
 	 CHU_U_p ~ dbeta(1, 1);
-	 CHW_D_p ~ dbeta(1, 1);
-	 CHW_U_p ~ dbeta(1, 1);
+	 CHW_D_p <- 0; # no detections / not in operation
+	 CHW_U_p <- 0; # no detections / not in operation
 	 LWN_D_p ~ dbeta(1, 1);
 	 LWN_U_p ~ dbeta(1, 1);
 	 NAL_D_p ~ dbeta(1, 1);
 	 NAL_U_p ~ dbeta(1, 1);
 	 NAU_D_p ~ dbeta(1, 1);
 	 NAU_U_p ~ dbeta(1, 1);
-	 WTL_D_p ~ dbeta(1, 1);
-	 WTL_U_p ~ dbeta(1, 1);
+	 WTL_D_p <- 0; # no detections / not in operation
+	 WTL_U_p <- 0; # no detections / not in operation
 	 RRF_p ~ dbeta(1, 1);
-	 EBO_D_p ~ dbeta(1, 1);
+	 EBO_D_p <- 1; # Single array, no upstream detections
 	 ENL_D_p ~ dbeta(1, 1);
 	 ENL_U_p ~ dbeta(1, 1);
 	 EHL_D_p ~ dbeta(1, 1);
 	 EHL_U_p ~ dbeta(1, 1);
 	 ENA_D_p ~ dbeta(1, 1);
 	 ENA_U_p ~ dbeta(1, 1);
-	 MAD_D_p ~ dbeta(1, 1);
-	 MAD_U_p ~ dbeta(1, 1);
+	 MAD_D_p <- 0; # no detections / not in operation
+	 MAD_U_p <- 1; # Single array, no upstream detections
 	 RCT_D_p ~ dbeta(1, 1);
 	 RCT_U_p ~ dbeta(1, 1);
 	 WEA_p ~ dbeta(1, 1);
-	 FST_p ~ dbeta(1, 1);
+	 FST_p <- 1; # Single array, no upstream detections
 	 MTB_D_p ~ dbeta(1, 1);
 	 MTB_U_p ~ dbeta(1, 1);
 	 LMR_D_p ~ dbeta(1, 1);
@@ -68,7 +68,7 @@ model {
 	 LBC_D_p ~ dbeta(1, 1);
 	 LBC_U_p ~ dbeta(1, 1);
 	 MRC_D_p ~ dbeta(1, 1);
-	 MRC_U_p ~ dbeta(1, 1);
+	 MRC_U_p <- 0; # no detections / not in operation
 	 BVC_D_p ~ dbeta(1, 1);
 	 BVC_U_p ~ dbeta(1, 1);
 	 CRW_D_p ~ dbeta(1, 1);
@@ -79,66 +79,66 @@ model {
 	 MRW_U_p ~ dbeta(1, 1);
 	 MRU_D_p ~ dbeta(1, 1);
 	 MRU_U_p ~ dbeta(1, 1);
-	 WFC_p ~ dbeta(1, 1);
+	 WFC_p <- 1; # Single array, no upstream detections
 	 SCP_D_p ~ dbeta(1, 1);
 	 SCP_U_p ~ dbeta(1, 1);
 	 TWR_D_p ~ dbeta(1, 1);
 	 TWR_U_p ~ dbeta(1, 1);
-	 TWISPW_p ~ dbeta(1, 1);
+	 TWISPW_p <- 1; # Single array, no upstream detections
 	 OKL_D_p ~ dbeta(1, 1);
 	 OKL_U_p ~ dbeta(1, 1);
-	 AEN_p ~ dbeta(1, 1);
-	 ANT_D_p ~ dbeta(1, 1);
-	 ANT_U_p ~ dbeta(1, 1);
-	 ANR_p ~ dbeta(1, 1);
+	 AEN_p <- 0; # no detections / not in operation
+	 ANT_D_p <- 0; # no detections / not in operation
+	 ANT_U_p <- 0; # no detections / not in operation
+	 ANR_p <- 0; # no detections / not in operation
 	 BPC_D_p ~ dbeta(1, 1);
 	 BPC_U_p ~ dbeta(1, 1);
-	 JOH_p ~ dbeta(1, 1);
+	 JOH_p <- 1; # Single array, no upstream detections
 	 LLC_D_p ~ dbeta(1, 1);
 	 LLC_U_p ~ dbeta(1, 1);
-	 LLF_U_p ~ dbeta(1, 1);
+	 LLF_U_p <- 0; # no detections / not in operation
 	 OMK_D_p ~ dbeta(1, 1);
 	 OMK_U_p ~ dbeta(1, 1);
 	 OBF_p ~ dbeta(1, 1);
 	 OMF_D_p ~ dbeta(1, 1);
-	 OMF_U_p ~ dbeta(1, 1);
-	 OMH_p ~ dbeta(1, 1);
+	 OMF_U_p <- 0; # no detections / not in operation
+	 OMH_p <- 0; # no detections / not in operation
 	 SA1_D_p ~ dbeta(1, 1);
 	 SA1_U_p ~ dbeta(1, 1);
-	 SAD_p ~ dbeta(1, 1);
-	 TNK_p ~ dbeta(1, 1);
-	 WAN_p ~ dbeta(1, 1);
-	 WHS_p ~ dbeta(1, 1);
+	 SAD_p <- 1; # Single array, no upstream detections
+	 TNK_p <- 1; # Single array, no upstream detections
+	 WAN_p <- 0; # no detections / not in operation
+	 WHS_p <- 0; # no detections / not in operation
 	 ZSL_D_p ~ dbeta(1, 1);
-	 ZSL_U_p ~ dbeta(1, 1);
-	 NMC_D_p ~ dbeta(1, 1);
-	 NMC_U_p ~ dbeta(1, 1);
-	 OKC_D_p ~ dbeta(1, 1);
-	 OKC_U_p ~ dbeta(1, 1);
-	 OKM_p ~ dbeta(1, 1);
-	 SKA_D_p ~ dbeta(1, 1);
-	 SKA_U_p ~ dbeta(1, 1);
-	 OKP_p ~ dbeta(1, 1);
-	 OKS_D_p ~ dbeta(1, 1);
-	 OKS_U_p ~ dbeta(1, 1);
-	 OKV_D_p ~ dbeta(1, 1);
-	 OKV_U_p ~ dbeta(1, 1);
+	 ZSL_U_p <- 0; # no detections / not in operation
+	 NMC_D_p <- 0; # no detections / not in operation
+	 NMC_U_p <- 0; # no detections / not in operation
+	 OKC_D_p <- 0; # no detections / not in operation
+	 OKC_U_p <- 0; # no detections / not in operation
+	 OKM_p <- 0; # no detections / not in operation
+	 SKA_D_p <- 0; # no detections / not in operation
+	 SKA_U_p <- 0; # no detections / not in operation
+	 OKP_p <- 0; # no detections / not in operation
+	 OKS_D_p <- 0; # no detections / not in operation
+	 OKS_U_p <- 0; # no detections / not in operation
+	 OKV_D_p <- 0; # no detections / not in operation
+	 OKV_U_p <- 0; # no detections / not in operation
 	 OKI_D_p ~ dbeta(1, 1);
 	 OKI_U_p ~ dbeta(1, 1);
-	 TON_p ~ dbeta(1, 1);
+	 TON_p <- 0; # no detections / not in operation
 	 WEH_D_p ~ dbeta(1, 1);
 	 WEH_U_p ~ dbeta(1, 1);
 	 RSH_D_p ~ dbeta(1, 1);
 	 RSH_U_p ~ dbeta(1, 1);
-	 TMF_p ~ dbeta(1, 1);
+	 TMF_p <- 1; # Single array, no upstream detections
 	 WWB_D_p ~ dbeta(1, 1);
 	 WWB_U_p ~ dbeta(1, 1);
 	 LOT_D_p ~ dbeta(1, 1);
 	 LOT_U_p ~ dbeta(1, 1);
 	 HST_D_p ~ dbeta(1, 1);
 	 HST_U_p ~ dbeta(1, 1);
-	 MDR_D_p ~ dbeta(1, 1);
-	 MDR_U_p ~ dbeta(1, 1);
+	 MDR_D_p <- 0; # no detections / not in operation
+	 MDR_U_p <- 1; # Single array, no upstream detections
 
 # Priors for transition probabilities 
 
@@ -298,8 +298,8 @@ model {
 	 phi_CRW[1] ~ dbeta(1, 1); 
 	 phi_CRW[2] ~ dbeta(1, 1); 
 
-	 phi_ICM[1] ~ dbeta(1, 1); 
-	 phi_ICM[2] ~ dbeta(1, 1); 
+	 phi_ICM[1] <- 0 # no upstream detections
+	 phi_ICM[2] <- 0 # no upstream detections
 
 	 psi_OKC[1, 1:n_branch_OKC] ~ ddirch(OKC_dirch_vec[1,]); 
 	 psi_OKC[2, 1:n_branch_OKC] ~ ddirch(OKC_dirch_vec[2,]); 
@@ -343,8 +343,8 @@ model {
 	 phi_OBF[1] ~ dbeta(1, 1); 
 	 phi_OBF[2] ~ dbeta(1, 1); 
 
-	 phi_OMF[1] ~ dbeta(1, 1); 
-	 phi_OMF[2] ~ dbeta(1, 1); 
+	 phi_OMF[1] <- 0 # no upstream detections
+	 phi_OMF[2] <- 0 # no upstream detections
 
 	 psi_ZSL[1, 1:n_branch_ZSL] ~ ddirch(ZSL_dirch_vec[1,]); 
 	 psi_ZSL[2, 1:n_branch_ZSL] ~ ddirch(ZSL_dirch_vec[2,]); 
@@ -358,11 +358,11 @@ model {
 	 omega_ZSL[3, 1:n_branch_ZSL] <- psi_ZSL[2,]; 
 	 omega_ZSL[3, (n_branch_ZSL + 1)] <- 0; 
 
-	 phi_ANT[1] ~ dbeta(1, 1); 
-	 phi_ANT[2] ~ dbeta(1, 1); 
+	 phi_ANT[1] <- 0 # no upstream detections
+	 phi_ANT[2] <- 0 # no upstream detections
 
-	 phi_LLC[1] ~ dbeta(1, 1); 
-	 phi_LLC[2] ~ dbeta(1, 1); 
+	 phi_LLC[1] <- 0 # no upstream detections
+	 phi_LLC[2] <- 0 # no upstream detections
 
 	 psi_RRF[1, 1:n_branch_RRF] ~ ddirch(RRF_dirch_vec[1,]); 
 	 psi_RRF[2, 1:n_branch_RRF] ~ ddirch(RRF_dirch_vec[2,]); 
@@ -376,8 +376,8 @@ model {
 	 omega_RRF[3, 1:n_branch_RRF] <- psi_RRF[2,]; 
 	 omega_RRF[3, (n_branch_RRF + 1)] <- 0; 
 
-	 phi_OKM[1] ~ dbeta(1, 1); 
-	 phi_OKM[2] ~ dbeta(1, 1); 
+	 phi_OKM[1] <- 0 # no upstream detections
+	 phi_OKM[2] <- 0 # no upstream detections
 
 # Where is each fish? 
 

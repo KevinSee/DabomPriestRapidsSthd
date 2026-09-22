@@ -22,7 +22,7 @@ load(here('analysis/data/derived_data/site_config.rda'))
 # Load required DABOM data
 #-----------------------------------------------------------------
 # set year
-yr = 2025
+yr = 2026
 
 # for(yr in 2011:2024) {
   cat(paste("Working on", yr, "\n\n"))
@@ -204,7 +204,7 @@ janitor::tabyl(convg_df,
 
 # look at parameters that have not converged
 convg_df %>%
-  # filter(!converged) %>%
+  filter(!converged) %>%
   left_join(rhat_df) %>%
   arrange(esr)
 
@@ -237,8 +237,8 @@ post_summ(my_mod,
 
 
 
-param_chk = c('psi_RRF',
-              'psi_MRC')
+param_chk = c('psi_WEA',
+              'psi_MTB')
 param_chk = convg_df %>%
   filter(!converged) %>%
   pull(parameter)
