@@ -889,6 +889,9 @@ gen_df <-
          probability_gsi_3 = case_when(!is.na(probability_24) ~ probability_24,
                                        !is.na(probability_23) ~ probability_23,
                                        .default = NA_real_)) |>
+  mutate(across(hatchery_byname,
+                ~ case_when(is.na(.) ~ str_split_i(hatchery_by, "_", 1),
+                            .default = .))) |>
   select(-any_of(paste0("probability_", c(18:24)))) |>
   mutate(spawn_year = sample_year + 1) |>
   # drop any row with no PIT tag number
@@ -937,6 +940,21 @@ gen_df <-
                      pit_tag,
                      assignment_method) |>
               filter(assignment_method == "failed"))
+
+
+# for other duplicates, choose first sample
+gen_df <-
+  gen_df |>
+  anti_join(gen_df |>
+              get_dupes(spawn_year,
+                        pit_tag) |>
+              anti_join(gen_df |>
+                          get_dupes(spawn_year,
+                                    pit_tag) |>
+                          # as.data.frame()
+                          slice_min(sample_date,
+                                    by = c(spawn_year,
+                                           pit_tag))))
 
 
 # get some broodstock data
@@ -1055,6 +1073,7 @@ list("Sex change" =
        filter(spawn_year >= min_yr) |>
        filter(origin_bio == "W",
               origin_final == "HNC") |>
+       filter_out(origin_brood == origin_bio) |>
        select(spawn_year,
               pit_tag,
               cwt,
@@ -1093,6 +1112,7 @@ bio_comp |>
           origin_ptagis = origin_bio,
           origin_final,
           origin_gen,
+          origin_brood,
           snub_dorsal,
           age,
           origin_scales) |>
