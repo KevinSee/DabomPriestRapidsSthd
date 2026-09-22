@@ -33,7 +33,7 @@ load(here('analysis/data/derived_data',
 
 #-----------------------------------------------------------------
 # set year
-yr = 2025
+yr = 2026
 
 # what dam count to use?
 dam_cnt_name = c("PriestRapids",
@@ -137,10 +137,10 @@ dam_cnt_name = c("PriestRapids",
                                parent_child) |>
     select(-main_branch) |>
     mutate(across(origin,
-                  ~ case_match(.,
+                  ~ recode_values(.,
                                1 ~ "W",
                                2 ~ "H",
-                               .default = NA_character_)))
+                               default = NA_character_)))
 
   # summarize transition probabilities
   trans_summ = summarisePost(trans_df,
@@ -293,6 +293,10 @@ dam_cnt_name = c("PriestRapids",
            adj_win_cnt_se = win_cnt * reasc_rate_se) %>%
     # crossing(origin = c("W", "H")) %>%
     # break down hatchery and wild based on upstream tags
+    # mutate(across(origin,
+    #               ~ replace_values(.,
+    #                                "W" ~ "NOR",
+    #                                "H" ~ "HOR"))) |>
     mutate(n_obs = map2_int(pit_code,
                             origin,
                             .f = function(x, y) {
