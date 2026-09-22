@@ -85,7 +85,7 @@ load(here('analysis/data/derived_data/PITcleanr',
 
 # read in full genetic summary data
 gen_df <-
-    read_excel("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/Sex and Origin PRD-Brood Comparison Data/Genetics_PBT_GSI/AppendixI_OmyPRD2024(Jul01-Oct31).xlsx",
+    read_excel("T:/DFW-Team FP Upper Columbia Escapement - General/UC_Sthd/inputs/Bio Data/Sex and Origin PRD-Brood Comparison Data/Genetics_PBT_GSI/RY2024_SY2025/AppendixI_OmyPRD2024(Jul01-Oct31).xlsx",
              sheet = "PBT_GSI",
              skip = 1) |>
   clean_names() |>
