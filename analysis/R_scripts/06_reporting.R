@@ -918,6 +918,7 @@ dabom_df <-
   select(run_year, spawn_year) %>%
   mutate(dam_cnt_name = case_when(spawn_year %in% c(2011:2015,
                                                     2018) ~ "PriestRapids",
+                                  spawn_year >= 2026 ~ "PriestRapids",
                                   .default = "RockIsland"))
 
 # focus only on max year
