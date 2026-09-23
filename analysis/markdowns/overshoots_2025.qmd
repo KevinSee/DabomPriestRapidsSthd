@@ -1,6 +1,6 @@
 ---
 title: "Steelhead Overshoot and Fallback Rates"
-subtitle: "Upper Columbia SY2026"
+subtitle: "Upper Columbia SY2025"
 author:
   - name: Kevin See
     affliation-ref: wdfw
@@ -79,12 +79,12 @@ set_flextable_defaults(theme_fun = theme_vanilla,
 # set some parameters
 
 # set year
-yr = 2026
+yr = 2025
 
 # which dam counts are we using for DABOM?
 dam_cnt_name <-
   c("PriestRapids",
-    "RockIsland")[1]
+    "RockIsland")[2]
 ```
 
 

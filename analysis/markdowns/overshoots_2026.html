@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Kevin See">
+<meta name="dcterms.date" content="2026-09-22">
+
+<title>Steelhead Overshoot and Fallback Rates</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="overshoots_2026_files/libs/clipboard/clipboard.min.js"></script>
+<script src="overshoots_2026_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="overshoots_2026_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="overshoots_2026_files/libs/quarto-html/popper.min.js"></script>
+<script src="overshoots_2026_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="overshoots_2026_files/libs/quarto-html/anchor.min.js"></script>
+<link href="overshoots_2026_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="overshoots_2026_files/libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="overshoots_2026_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="overshoots_2026_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="overshoots_2026_files/libs/bootstrap/bootstrap-5b0f3d3497c491e503a080a5c0cfc36f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="overshoots_2026_files/libs/tabwid-1.1.3/tabwid.css" rel="stylesheet">
+
+<script src="overshoots_2026_files/libs/tabwid-1.1.3/tabwid.js"></script>
+
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction-and-objectives" id="toc-introduction-and-objectives" class="nav-link active" data-scroll-target="#introduction-and-objectives">Introduction and Objectives</a></li>
+  <li><a href="#data-and-methods" id="toc-data-and-methods" class="nav-link" data-scroll-target="#data-and-methods">Data and Methods</a></li>
+  <li><a href="#analysis" id="toc-analysis" class="nav-link" data-scroll-target="#analysis">Analysis</a>
+  <ul class="collapse">
+  <li><a href="#wells-and-east-bank-hatchery-fish" id="toc-wells-and-east-bank-hatchery-fish" class="nav-link" data-scroll-target="#wells-and-east-bank-hatchery-fish">Wells and East Bank Hatchery Fish</a></li>
+  </ul></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
+  <ul class="collapse">
+  <li><a href="#overshoot-and-fallback" id="toc-overshoot-and-fallback" class="nav-link" data-scroll-target="#overshoot-and-fallback">Overshoot and Fallback</a></li>
+  <li><a href="#wells-hatchery-fish" id="toc-wells-hatchery-fish" class="nav-link" data-scroll-target="#wells-hatchery-fish">Wells Hatchery Fish</a></li>
+  <li><a href="#east-bank-hatchery-fish" id="toc-east-bank-hatchery-fish" class="nav-link" data-scroll-target="#east-bank-hatchery-fish">East Bank Hatchery Fish</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="overshoots_2026.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li><li><a href="overshoots_2026.docx"><i class="bi bi-file-word"></i>MS Word</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Steelhead Overshoot and Fallback Rates</h1>
+<p class="subtitle lead">Upper Columbia SY2026</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Kevin See <a href="mailto:Kevin.See@dfw.wa.gov" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 22, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction-and-objectives" class="level1">
+<h1>Introduction and Objectives</h1>
+<p>WDFW has been trapping and PIT tagging hatchery and wild adult steelhead at Priest Rapids Dam and using the subsequent PIT tag detections to estimate escapement and abundance to various locations around the Upper Columbia since 2011 <span class="citation" data-cites="Waterhouse2020">(<a href="#ref-Waterhouse2020" role="doc-biblioref">Waterhouse et al. 2020</a>)</span>. In spawn year 2026, CRITFC analyzed genetic samples of these fish and determined either the broodstock of hatchery-origin fish through parentage-based tagging (PBT), or genetic stock identification (GSI) for natural-origin fish. We used that information to look at movement patterns of fish who originated from outside the Upper Columbia basin.</p>
+<p>Overshoots are defined as fish that move upstream, past their natal tributary, during their freshwater migration. Some of these overshoot fish may eventually fallback to their natal basin, while others may stray into an upstream basin, or perish somewhere in the mainstem. We initially focused on fish identified as out-of-basin fish (through PBT or GSI) that were detected at Priest Rapids Dam and could therefore be considered an overshoot into the Upper Columbia. For natural-origin fish, GSI cannot identify differences between Upper Columbia populations, only differences between Upper Columbia fish and those from outside the Upper Columbia, which does not allow us to examine any within-basin overshooting of natural origin steelhead (e.g., Wenatachee steelhead overshooting past Rocky Reach Dam). In this report, we examine several overshoot-related questions:</p>
+<ol type="1">
+<li>What is the abundance of out-of-basin overshoot steelhead, by origin, at each of the Upper Columbia dams with PIT tag detection infrastructure (i.e.&nbsp;Priest Rapids, Rock Island, Rocky Reach and Wells)?</li>
+<li>Of those fish that overshoot past each dam in the Upper Columbia, what percentage are eventually detected downstream of Priest Rapids Dam (i.e., what percent fallback)?</li>
+<li>Of the hatchery fish from broodstock at Wells Hatchery or further upstream, where was their final detection, especially those fish that crossed Rocky Reach Dam?</li>
+<li>Of the fish from East Bank Hatchery broodstock, where was their final detection, especially those fish that crossed Rock Island Dam?</li>
+</ol>
+</section>
+<section id="data-and-methods" class="level1">
+<h1>Data and Methods</h1>
+<p>In SY2026, 907 adult steelhead were PIT tagged or recaptured at Priest Rapids Dam (<a href="#tbl-tags" class="quarto-xref">Table&nbsp;1</a>). As the trap at that location was run consistently throughout the run season, we consider these fish a random and representative sample of the run at large. Natural-origin fish were identified as non-Upper Columbia fish overshooting past Priest Rapids Dam if their GSI assignment was <em>not</em> <code>UPPCOL</code>. For hatchery-origin fish, if PBT identified a fish’s hatchery group as anything other than OmyEAST, OmyWELL, OmyWMET, OmyWOKA, OmyWOMA, or OmyWINT, including unassigned, they were considered an overshoot fish. Due to sample size limitations, we did not divide Upper Columbia overshoots into smaller groups (e.g., Snake River, or specific hatchery), but treated them as a homogeneous group in terms of their behavior within the Upper Columbia. Eighty-eight fish failed to produce a PBT or GSI result, and were excluded from the analysis. We assumed the genetic results for those fish were missing at random.</p>
+<div class="cell">
+<div id="tbl-tags" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-tags-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Number of tags (and percentages) from sampling at Priest Rapids Dam and whether they were identified at sampling as an overshoot into the Upper Columbia or not, by origin.
+</figcaption>
+<div aria-describedby="tbl-tags-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-2cd9dcae{}.cl-2cd3715c{font-family:'Arial';font-size:10pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-2cd37166{font-family:'Arial';font-size:10pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-2cd60462{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-2cd6200a{width:0.98in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2cd6200b{width:1.119in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2cd62014{width:0.98in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2cd6201e{width:1.119in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2cd62028{width:0.98in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2cd62032{width:1.119in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2cd62033{width:0.98in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2cd62034{width:1.119in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-2cd9dcae"><thead><tr style="overflow-wrap:break-word;"><th class="cl-2cd6200a"><p class="cl-2cd60462"><span class="cl-2cd3715c">Overshoot</span></p></th><th class="cl-2cd6200b"><p class="cl-2cd60462"><span class="cl-2cd3715c">HOR</span></p></th><th class="cl-2cd6200b"><p class="cl-2cd60462"><span class="cl-2cd3715c">NOR</span></p></th><th class="cl-2cd6200b"><p class="cl-2cd60462"><span class="cl-2cd3715c">Total</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-2cd62014"><p class="cl-2cd60462"><span class="cl-2cd37166">FALSE</span></p></td><td class="cl-2cd6201e"><p class="cl-2cd60462"><span class="cl-2cd37166">336 (62.8%)</span></p></td><td class="cl-2cd6201e"><p class="cl-2cd60462"><span class="cl-2cd37166">252 (67.7%)</span></p></td><td class="cl-2cd6201e"><p class="cl-2cd60462"><span class="cl-2cd37166">588 (64.8%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-2cd62028"><p class="cl-2cd60462"><span class="cl-2cd37166">TRUE</span></p></td><td class="cl-2cd62032"><p class="cl-2cd60462"><span class="cl-2cd37166">199 (37.2%)</span></p></td><td class="cl-2cd62032"><p class="cl-2cd60462"><span class="cl-2cd37166">120 (32.3%)</span></p></td><td class="cl-2cd62032"><p class="cl-2cd60462"><span class="cl-2cd37166">319 (35.2%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-2cd62033"><p class="cl-2cd60462"><span class="cl-2cd37166">Total</span></p></td><td class="cl-2cd62034"><p class="cl-2cd60462"><span class="cl-2cd37166">535 (100.0%)</span></p></td><td class="cl-2cd62034"><p class="cl-2cd60462"><span class="cl-2cd37166">372 (100.0%)</span></p></td><td class="cl-2cd62034"><p class="cl-2cd60462"><span class="cl-2cd37166">907 (100.0%)</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="analysis" class="level1">
+<h1>Analysis</h1>
+<p>We estimated abundance of overshoot fish at each mainstem dam by calculating the number of tags in our sample detected at, or upstream, of each dam, and then dividing that number of tags by the estimated tag rate at Priest Rapids Dam (<a href="#tbl-tag-rate" class="quarto-xref">Table&nbsp;2</a>). This tag rate was calculated by dividing teh known number of tags in our sample by an estimate of unique steelhead crossing Priest Rapids Dam. For the last several years, to estimate steelhead crossing Priest Rapids Dam we start with the window counts at Rock Island Dam, then accounting for re-ascending fish who were counted more than once by using PIT tags to estimate a re-ascension rate. By multiplying the total window counts by one minus the re-ascension rate we estimated the number of unique steelhead passing Rock Island Dam. We then estimated how many unique steelhead crossed Priest Rapids Dam by dividing the estimate at Rock Island Dam by the transition probability between Priest Rapids Dam and Rock Island, which comes out of the overall Upper Columbia steelhead escapement analysis, described by <span class="citation" data-cites="Waterhouse2020">Waterhouse et al. (<a href="#ref-Waterhouse2020" role="doc-biblioref">2020</a>)</span>.</p>
+<div class="cell">
+<div id="tbl-tag-rate" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-tag-rate-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: Table displaying the estimate of the number of unique steelhead, by origin, crossing Priest Rapids Dam, with standard error, the number of tags in our sample and the calculated tag rate, with standard error.
+</figcaption>
+<div aria-describedby="tbl-tag-rate-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-2d259d24{}.cl-2d1e2a94{font-family:'Arial';font-size:10pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-2d1e2ab2{font-family:'Arial';font-size:10pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-2d21490e{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-2d214922{margin:0;text-align:right;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-2d2162cc{width:0.594in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d2162d6{width:0.694in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d2162e0{width:1.103in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d2162e1{width:0.98in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d2162ea{width:0.748in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d2162f4{width:0.872in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d2162f5{width:1.096in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d2162f6{width:0.594in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d2162fe{width:0.694in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d216308{width:1.103in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d216309{width:0.98in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d216312{width:0.748in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d216313{width:0.872in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d21631c{width:1.096in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d21631d{width:0.594in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d216326{width:0.694in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d216327{width:1.103in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d216330{width:0.98in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d21633a{width:0.748in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d216344{width:0.872in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d216345{width:1.096in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-2d259d24"><thead><tr style="overflow-wrap:break-word;"><th class="cl-2d2162cc"><p class="cl-2d21490e"><span class="cl-2d1e2a94">Year</span></p></th><th class="cl-2d2162d6"><p class="cl-2d21490e"><span class="cl-2d1e2a94">Origin</span></p></th><th class="cl-2d2162e0"><p class="cl-2d214922"><span class="cl-2d1e2a94">Unique Sthd</span></p></th><th class="cl-2d2162e1"><p class="cl-2d214922"><span class="cl-2d1e2a94">Unique SE</span></p></th><th class="cl-2d2162ea"><p class="cl-2d214922"><span class="cl-2d1e2a94">N Tags</span></p></th><th class="cl-2d2162f4"><p class="cl-2d214922"><span class="cl-2d1e2a94">Tag Rate</span></p></th><th class="cl-2d2162f5"><p class="cl-2d214922"><span class="cl-2d1e2a94">Tag Rate SE</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-2d2162f6"><p class="cl-2d21490e"><span class="cl-2d1e2ab2">2026</span></p></td><td class="cl-2d2162fe"><p class="cl-2d21490e"><span class="cl-2d1e2ab2">HOR</span></p></td><td class="cl-2d216308"><p class="cl-2d214922"><span class="cl-2d1e2ab2">5,311</span></p></td><td class="cl-2d216309"><p class="cl-2d214922"><span class="cl-2d1e2ab2">145.7</span></p></td><td class="cl-2d216312"><p class="cl-2d214922"><span class="cl-2d1e2ab2">535</span></p></td><td class="cl-2d216313"><p class="cl-2d214922"><span class="cl-2d1e2ab2">0.101</span></p></td><td class="cl-2d21631c"><p class="cl-2d214922"><span class="cl-2d1e2ab2">0.0028</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-2d21631d"><p class="cl-2d21490e"><span class="cl-2d1e2ab2">2026</span></p></td><td class="cl-2d216326"><p class="cl-2d21490e"><span class="cl-2d1e2ab2">NOR</span></p></td><td class="cl-2d216327"><p class="cl-2d214922"><span class="cl-2d1e2ab2">3,807</span></p></td><td class="cl-2d216330"><p class="cl-2d214922"><span class="cl-2d1e2ab2">145.2</span></p></td><td class="cl-2d21633a"><p class="cl-2d214922"><span class="cl-2d1e2ab2">372</span></p></td><td class="cl-2d216344"><p class="cl-2d214922"><span class="cl-2d1e2ab2">0.098</span></p></td><td class="cl-2d216345"><p class="cl-2d214922"><span class="cl-2d1e2ab2">0.0037</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>Once we’d determined the furthest upstream dam each overshoot fish had crossed, we calculated what proportion of those fish (at each dam) had a detection somewhere below Priest Rapids Dam, and we assumed those fish had successfully fallen back. Because the GSI groups are fairly large spatially, we did not examine exactly what basin each fish’s last detection was in and compare that to their GSI (or PBT) designation. Such as analysis could be undertaken, but once the furthest upstream overshoot dam is also considered, the sample sizes of tags become quite small.</p>
+<section id="wells-and-east-bank-hatchery-fish" class="level2">
+<h2 class="anchored" data-anchor-id="wells-and-east-bank-hatchery-fish">Wells and East Bank Hatchery Fish</h2>
+<p>We focused on two particular groups of hatchery fish from within the Upper Columbia: those from broodstock collected at or upstream of Wells Dam (PBT assignments of <code>OmyWELL</code> <code>OmyWMET</code>, <code>OmyWINT</code>, <code>OmyWOKA</code> or <code>OmyWOMA</code>) and those from broodstock at East Bank Hatchery (PBT assignment of <code>OmyEAST</code>). For broodstock from Wells Dam or upstream, we concentrated on those tags detected crossing Rocky Reach Dam, and examined their final upstream PIT tag detection. For fish from East Bank hatchery, we started with tags detected crossing Rock Island Dam and performed a similar analysis.</p>
+</section>
+</section>
+<section id="results" class="level1">
+<h1>Results</h1>
+<section id="overshoot-and-fallback" class="level2">
+<h2 class="anchored" data-anchor-id="overshoot-and-fallback">Overshoot and Fallback</h2>
+<p><a href="#tbl-flbk" class="quarto-xref">Table&nbsp;3</a> summarizes the abundance, by origin, of adult steelhead that have overshot into the Upper Columbia according to the furthest upstream overshoot dam, as well as the number that fallback to a tributary below Priest Rapids Dam and that percentage of fallback. <a href="#tbl-flbk-yak" class="quarto-xref">Table&nbsp;4</a> provides a similar summary, but focused only on those natural-origin steelhead that originated from the Yakima River and were detected falling back into the Yakima.</p>
+<div class="cell">
+<div id="tbl-flbk" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-flbk-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;3: The number of tags overshooting into the Upper Columbia last detected at each dam, overshoot abundance (standard error) of adult steelhead, by origin, the abundance estimated to fallback to a tributary somewhere downstream of Priest Rapids Dam (standard error), and the percent of fallback success. Fish are broken out by the furthest Upper Columbia dam they are detected overshooting past, but all fallback must be downstream of Priest Rapids Dam.
+</figcaption>
+<div aria-describedby="tbl-flbk-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-2d6a7912{}.cl-2d60d920{font-family:'Arial';font-size:10pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-2d60d948{font-family:'Arial';font-size:10pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-2d65eb9a{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-2d65ebae{margin:0;text-align:right;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-2d660a4e{width:0.694in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660a58{width:1.644in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660a62{width:1.343in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660a63{width:1.034in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660a6c{width:0.918in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660a6d{width:0.795in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660a76{width:0.694in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660a77{width:1.644in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660a78{width:1.343in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660a79{width:1.034in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660a80{width:0.918in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660a8a{width:0.795in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660a8b{width:0.694in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660a94{width:1.644in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660a95{width:1.343in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660a9e{width:1.034in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660a9f{width:0.918in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660aa0{width:0.795in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660aa8{width:0.694in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660aa9{width:1.644in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660aaa{width:1.343in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660ab2{width:1.034in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660ab3{width:0.918in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2d660abc{width:0.795in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-2d6a7912"><thead><tr style="overflow-wrap:break-word;"><th class="cl-2d660a4e"><p class="cl-2d65eb9a"><span class="cl-2d60d920">Origin</span></p></th><th class="cl-2d660a58"><p class="cl-2d65eb9a"><span class="cl-2d60d920">Last Overshoot Dam</span></p></th><th class="cl-2d660a62"><p class="cl-2d65ebae"><span class="cl-2d60d920">Overshoot Tags</span></p></th><th class="cl-2d660a63"><p class="cl-2d65eb9a"><span class="cl-2d60d920">Overshoot</span></p></th><th class="cl-2d660a6c"><p class="cl-2d65eb9a"><span class="cl-2d60d920">Fallback</span></p></th><th class="cl-2d660a6d"><p class="cl-2d65ebae"><span class="cl-2d60d920">Percent</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td rowspan="5" class="cl-2d660a76"><p class="cl-2d65eb9a"><span class="cl-2d60d948">HOR</span></p></td><td class="cl-2d660a77"><p class="cl-2d65eb9a"><span class="cl-2d60d948">Priest Rapids</span></p></td><td class="cl-2d660a78"><p class="cl-2d65ebae"><span class="cl-2d60d948">63</span></p></td><td class="cl-2d660a79"><p class="cl-2d65eb9a"><span class="cl-2d60d948">625 (17.2)</span></p></td><td class="cl-2d660a80"><p class="cl-2d65eb9a"><span class="cl-2d60d948">496 (34.7)</span></p></td><td class="cl-2d660a8a"><p class="cl-2d65ebae"><span class="cl-2d60d948">79.4</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-2d660a94"><p class="cl-2d65eb9a"><span class="cl-2d60d948">Rock Island</span></p></td><td class="cl-2d660a95"><p class="cl-2d65ebae"><span class="cl-2d60d948">38</span></p></td><td class="cl-2d660a9e"><p class="cl-2d65eb9a"><span class="cl-2d60d948">377 (10.3)</span></p></td><td class="cl-2d660a9f"><p class="cl-2d65eb9a"><span class="cl-2d60d948">199 (31)</span></p></td><td class="cl-2d660aa0"><p class="cl-2d65ebae"><span class="cl-2d60d948">52.6</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-2d660a94"><p class="cl-2d65eb9a"><span class="cl-2d60d948">Rocky Reach</span></p></td><td class="cl-2d660a95"><p class="cl-2d65ebae"><span class="cl-2d60d948">20</span></p></td><td class="cl-2d660a9e"><p class="cl-2d65eb9a"><span class="cl-2d60d948">199 (5.4)</span></p></td><td class="cl-2d660a9f"><p class="cl-2d65eb9a"><span class="cl-2d60d948">79 (21.9)</span></p></td><td class="cl-2d660aa0"><p class="cl-2d65ebae"><span class="cl-2d60d948">40.0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-2d660a94"><p class="cl-2d65eb9a"><span class="cl-2d60d948">Wells</span></p></td><td class="cl-2d660a95"><p class="cl-2d65ebae"><span class="cl-2d60d948">78</span></p></td><td class="cl-2d660a9e"><p class="cl-2d65eb9a"><span class="cl-2d60d948">774 (21.2)</span></p></td><td class="cl-2d660a9f"><p class="cl-2d65eb9a"><span class="cl-2d60d948">159 (35.7)</span></p></td><td class="cl-2d660aa0"><p class="cl-2d65ebae"><span class="cl-2d60d948">20.5</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-2d660a94"><p class="cl-2d65eb9a"><span class="cl-2d60d920">Total</span></p></td><td class="cl-2d660a95"><p class="cl-2d65ebae"><span class="cl-2d60d920">199</span></p></td><td class="cl-2d660a9e"><p class="cl-2d65eb9a"><span class="cl-2d60d920">1,975 (29.7)</span></p></td><td class="cl-2d660a9f"><p class="cl-2d65eb9a"><span class="cl-2d60d920">933 (62.6)</span></p></td><td class="cl-2d660aa0"><p class="cl-2d65ebae"><span class="cl-2d60d920">47.2</span></p></td></tr><tr style="overflow-wrap:break-word;"><td rowspan="5" class="cl-2d660aa8"><p class="cl-2d65eb9a"><span class="cl-2d60d948">NOR</span></p></td><td class="cl-2d660a94"><p class="cl-2d65eb9a"><span class="cl-2d60d948">Priest Rapids</span></p></td><td class="cl-2d660a95"><p class="cl-2d65ebae"><span class="cl-2d60d948">26</span></p></td><td class="cl-2d660a9e"><p class="cl-2d65eb9a"><span class="cl-2d60d948">266 (10.1)</span></p></td><td class="cl-2d660a9f"><p class="cl-2d65eb9a"><span class="cl-2d60d948">164 (26.2)</span></p></td><td class="cl-2d660aa0"><p class="cl-2d65ebae"><span class="cl-2d60d948">61.5</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-2d660a94"><p class="cl-2d65eb9a"><span class="cl-2d60d948">Rock Island</span></p></td><td class="cl-2d660a95"><p class="cl-2d65ebae"><span class="cl-2d60d948">36</span></p></td><td class="cl-2d660a9e"><p class="cl-2d65eb9a"><span class="cl-2d60d948">368 (14.1)</span></p></td><td class="cl-2d660a9f"><p class="cl-2d65eb9a"><span class="cl-2d60d948">154 (30.9)</span></p></td><td class="cl-2d660aa0"><p class="cl-2d65ebae"><span class="cl-2d60d948">41.7</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-2d660a94"><p class="cl-2d65eb9a"><span class="cl-2d60d948">Rocky Reach</span></p></td><td class="cl-2d660a95"><p class="cl-2d65ebae"><span class="cl-2d60d948">11</span></p></td><td class="cl-2d660a9e"><p class="cl-2d65eb9a"><span class="cl-2d60d948">113 (4.3)</span></p></td><td class="cl-2d660a9f"><p class="cl-2d65eb9a"><span class="cl-2d60d948">31 (15.2)</span></p></td><td class="cl-2d660aa0"><p class="cl-2d65ebae"><span class="cl-2d60d948">27.3</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-2d660a94"><p class="cl-2d65eb9a"><span class="cl-2d60d948">Wells</span></p></td><td class="cl-2d660a95"><p class="cl-2d65ebae"><span class="cl-2d60d948">47</span></p></td><td class="cl-2d660a9e"><p class="cl-2d65eb9a"><span class="cl-2d60d948">481 (18.3)</span></p></td><td class="cl-2d660a9f"><p class="cl-2d65eb9a"><span class="cl-2d60d948">61 (23.5)</span></p></td><td class="cl-2d660aa0"><p class="cl-2d65ebae"><span class="cl-2d60d948">12.8</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-2d660aa9"><p class="cl-2d65eb9a"><span class="cl-2d60d920">Total</span></p></td><td class="cl-2d660aaa"><p class="cl-2d65ebae"><span class="cl-2d60d920">120</span></p></td><td class="cl-2d660ab2"><p class="cl-2d65eb9a"><span class="cl-2d60d920">1,228 (25.6)</span></p></td><td class="cl-2d660ab3"><p class="cl-2d65eb9a"><span class="cl-2d60d920">409 (49.2)</span></p></td><td class="cl-2d660abc"><p class="cl-2d65ebae"><span class="cl-2d60d920">33.3</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<div class="cell">
+<div id="tbl-flbk-yak" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-flbk-yak-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;4: The number of adult tags, originating from the Yakima watershed, that overshot into the Upper Columbia and were last detected at each dam, overshoot abundance (standard error) of adult steelhead from the Yakima, the abundance estimated to fallback into the Yakima, and the percent of fallback success. Fish are broken out by the furthest Upper Columbia dam they are detected overshooting past, but all fallback must be within the Yakima basin.
+</figcaption>
+<div aria-describedby="tbl-flbk-yak-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-2dabeba4{}.cl-2da385ea{font-family:'Arial';font-size:10pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-2da38608{font-family:'Arial';font-size:10pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-2da724f2{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-2da72510{margin:0;text-align:right;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-2da74b80{width:0.694in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74b94{width:1.173in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74b9e{width:1.644in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74ba8{width:1.343in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74bb2{width:0.98in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74bbc{width:0.918in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74bbd{width:0.795in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74bc6{width:0.694in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74bc7{width:1.173in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74bd0{width:1.644in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74bda{width:1.343in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74be4{width:0.98in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74be5{width:0.918in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74bee{width:0.795in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74bf8{width:0.694in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74c02{width:1.173in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74c03{width:1.644in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74c0c{width:1.343in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74c16{width:0.98in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74c17{width:0.918in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74c18{width:0.795in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74c20{width:0.694in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74c21{width:1.173in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74c2a{width:1.644in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74c2b{width:1.343in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74c34{width:0.98in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74c3e{width:0.918in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-2da74c48{width:0.795in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-2dabeba4"><thead><tr style="overflow-wrap:break-word;"><th class="cl-2da74b80"><p class="cl-2da724f2"><span class="cl-2da385ea">Origin</span></p></th><th class="cl-2da74b94"><p class="cl-2da724f2"><span class="cl-2da385ea">Source Basin</span></p></th><th class="cl-2da74b9e"><p class="cl-2da724f2"><span class="cl-2da385ea">Last Overshoot Dam</span></p></th><th class="cl-2da74ba8"><p class="cl-2da72510"><span class="cl-2da385ea">Overshoot Tags</span></p></th><th class="cl-2da74bb2"><p class="cl-2da724f2"><span class="cl-2da385ea">Overshoot</span></p></th><th class="cl-2da74bbc"><p class="cl-2da724f2"><span class="cl-2da385ea">Fallback</span></p></th><th class="cl-2da74bbd"><p class="cl-2da72510"><span class="cl-2da385ea">Percent</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td rowspan="5" class="cl-2da74bc6"><p class="cl-2da724f2"><span class="cl-2da38608">NOR</span></p></td><td rowspan="5" class="cl-2da74bc7"><p class="cl-2da724f2"><span class="cl-2da38608">Yakima</span></p></td><td class="cl-2da74bd0"><p class="cl-2da724f2"><span class="cl-2da38608">Priest Rapids</span></p></td><td class="cl-2da74bda"><p class="cl-2da72510"><span class="cl-2da38608">27</span></p></td><td class="cl-2da74be4"><p class="cl-2da724f2"><span class="cl-2da38608">276 (10.5)</span></p></td><td class="cl-2da74be5"><p class="cl-2da724f2"><span class="cl-2da38608">193 (40.7)</span></p></td><td class="cl-2da74bee"><p class="cl-2da72510"><span class="cl-2da38608">70.0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-2da74c03"><p class="cl-2da724f2"><span class="cl-2da38608">Rock Island</span></p></td><td class="cl-2da74c0c"><p class="cl-2da72510"><span class="cl-2da38608">17</span></p></td><td class="cl-2da74c16"><p class="cl-2da724f2"><span class="cl-2da38608">174 (6.6)</span></p></td><td class="cl-2da74c17"><p class="cl-2da724f2"><span class="cl-2da38608">120 (22.8)</span></p></td><td class="cl-2da74c18"><p class="cl-2da72510"><span class="cl-2da38608">69.2</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-2da74c03"><p class="cl-2da724f2"><span class="cl-2da38608">Rocky Reach</span></p></td><td class="cl-2da74c0c"><p class="cl-2da72510"><span class="cl-2da38608">4</span></p></td><td class="cl-2da74c16"><p class="cl-2da724f2"><span class="cl-2da38608">41 (1.6)</span></p></td><td class="cl-2da74c17"><p class="cl-2da724f2"><span class="cl-2da38608">41 (1.6)</span></p></td><td class="cl-2da74c18"><p class="cl-2da72510"><span class="cl-2da38608">100.0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-2da74c03"><p class="cl-2da724f2"><span class="cl-2da38608">Wells</span></p></td><td class="cl-2da74c0c"><p class="cl-2da72510"><span class="cl-2da38608">3</span></p></td><td class="cl-2da74c16"><p class="cl-2da724f2"><span class="cl-2da38608">31 (1.2)</span></p></td><td class="cl-2da74c17"><p class="cl-2da724f2"><span class="cl-2da38608">10 (8.4)</span></p></td><td class="cl-2da74c18"><p class="cl-2da72510"><span class="cl-2da38608">33.3</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-2da74c2a"><p class="cl-2da724f2"><span class="cl-2da385ea">Total</span></p></td><td class="cl-2da74c2b"><p class="cl-2da72510"><span class="cl-2da385ea">51</span></p></td><td class="cl-2da74c34"><p class="cl-2da724f2"><span class="cl-2da385ea">522 (12.6)</span></p></td><td class="cl-2da74c3e"><p class="cl-2da724f2"><span class="cl-2da385ea">365 (47.4)</span></p></td><td class="cl-2da74c48"><p class="cl-2da72510"><span class="cl-2da385ea">69.9</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p><a href="#fig-ovrst-abund" class="quarto-xref">Figure&nbsp;1</a> displays estimates of steelhead abundance at four of the mainstem dams in the Upper Columbia River, separated by whether those fish are overshoots into the Upper Columbia or not. <a href="#fig-ovrst-prop" class="quarto-xref">Figure&nbsp;2</a> translates those estimates into the proportion of total abundance at each dam that is made up of overshooting fish. <a href="#fig-dam-prop" class="quarto-xref">Figure&nbsp;3</a> displays the proportions of how far upstream the steelhead overshooting into the Upper Columbia travel, by focusing on the furthest upstream dam at which each overshoot fish was detected and calculating the proportion of fish at each dam. <a href="#fig-flbk-prop" class="quarto-xref">Figure&nbsp;4</a> depicts the percent of overshoot fish that fallback and are detected in a tributary downstream of Priest Rapids Dam, separated by origin and the furthest upstream dam they overshoot.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-ovrst-abund" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ovrst-abund-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="figures/fig-ovrst-abund-1.png" class="img-fluid figure-img" width="1800">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ovrst-abund-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Estimates of abundance of adult steelhead crossing each Upper Columbia dam, colored by whether those fish are overshooting into the Upper Columbia or not, and faceted by origin. Error bars represent 95% confidence intervals.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-ovrst-prop" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ovrst-prop-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="figures/fig-ovrst-prop-1.png" class="img-fluid figure-img" width="1800">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ovrst-prop-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Based on estimates of total unique steelhead crossing each Upper Columbia dam, this figure shows the estimated proportion of that total that is comprised of fish overshooting into the Upper Columbia, colored by origin. Error bars represent 95% confidence intervals.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-dam-prop" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-dam-prop-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="figures/fig-dam-prop-1.png" class="img-fluid figure-img" width="1800">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-dam-prop-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Colors depict the proportion of all the known, out-of-basin fish overshooting into the Upper Columbia overshooting past each dam (but not any further upstream).
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-flbk-prop" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-flbk-prop-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="figures/fig-flbk-prop-1.png" class="img-fluid figure-img" width="1800">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-flbk-prop-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Figure showing the proportion of overshoot fish into the Upper Columbia, separated by their furthest upstream dam and colored by origin, that were detected somewhere downstream of Priest Rapids Dam.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="wells-hatchery-fish" class="level2">
+<h2 class="anchored" data-anchor-id="wells-hatchery-fish">Wells Hatchery Fish</h2>
+<p>Of the 296 fish identified at Priest Rapids as coming from Wells Hatchery broodstock, 288 were detected passing Rocky Reach Dam. <a href="#tbl-wells-fate" class="quarto-xref">Table&nbsp;5</a> shows where their final detection occurred, broken out by broodstock code identified by PBT. Focusing specifically on the two Wells Hatchery safety net stocks, <a href="#tbl-wells-site" class="quarto-xref">Table&nbsp;6</a> shows the furthest upstream detection sites and how many tags from each broodstock were detected there.</p>
+<div class="cell">
+<div id="tbl-wells-fate" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-wells-fate-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;5: This table shows how many tags from various hatchery broodstocks in the Methow and Okanogan, detected crossing Rocky Reach dam, had their last detection in certain locations. Fish identified as being in Wells Pool had their final detection in the fish ladder at Wells Dam. Broodstock codes are as follows: OmyWELL - Wells Hatchery safety net fish released at Wells Dam, OmyWMET - Wells Hatchery safety net fish releaseed in lower Methow, OmyWINT - Winthrop National Fish Hatchery fish released in Methow, OmyWOKA - released in Okanogan, Salmon Creek and Antoine Creek (Okanogan basin), OmyWOMA - released in Omak Creek (Okanogan basin).
+</figcaption>
+<div aria-describedby="tbl-wells-fate-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-30f46728{}.cl-30ebbf38{font-family:'Arial';font-size:8pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-30ebbf4c{font-family:'Arial';font-size:8pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-30ef5d00{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-30ef7d6c{width:1.167in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7d76{width:0.852in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7d80{width:0.79in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7d8a{width:0.796in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7d8b{width:1.167in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7d94{width:0.852in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7d9e{width:0.79in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7d9f{width:0.796in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7da8{width:1.167in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7da9{width:0.852in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7db2{width:0.79in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7db3{width:0.796in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7dbc{width:1.167in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7dbd{width:0.852in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7dc6{width:0.79in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7dc7{width:0.796in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7dd0{width:1.167in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7dda{width:0.852in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7ddb{width:0.79in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-30ef7de4{width:0.796in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-30f46728"><thead><tr style="overflow-wrap:break-word;"><th class="cl-30ef7d6c"><p class="cl-30ef5d00"><span class="cl-30ebbf38">Final Detection</span></p></th><th class="cl-30ef7d76"><p class="cl-30ef5d00"><span class="cl-30ebbf38">OmyWELL</span></p></th><th class="cl-30ef7d80"><p class="cl-30ef5d00"><span class="cl-30ebbf38">OmyWMET</span></p></th><th class="cl-30ef7d80"><p class="cl-30ef5d00"><span class="cl-30ebbf38">OmyWINT</span></p></th><th class="cl-30ef7d80"><p class="cl-30ef5d00"><span class="cl-30ebbf38">OmyWOKA</span></p></th><th class="cl-30ef7d8a"><p class="cl-30ef5d00"><span class="cl-30ebbf38">OmyWOMA</span></p></th><th class="cl-30ef7d76"><p class="cl-30ef5d00"><span class="cl-30ebbf38">Total</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-30ef7d8b"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">Wenatchee</span></p></td><td class="cl-30ef7d94"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">4 (2.0%)</span></p></td><td class="cl-30ef7d9e"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7d9e"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7d9e"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7d9f"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7d94"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">4 (1.4%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-30ef7da8"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">Wells Pool</span></p></td><td class="cl-30ef7da9"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">27 (13.2%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">13 (27.7%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">2 (11.1%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">8 (47.1%)</span></p></td><td class="cl-30ef7db3"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">1 (50.0%)</span></p></td><td class="cl-30ef7da9"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">51 (17.7%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-30ef7da8"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">Wells Hatchery</span></p></td><td class="cl-30ef7da9"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">122 (59.8%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">2 (4.3%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db3"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7da9"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">124 (43.1%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-30ef7da8"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">Rocky Reach Dam</span></p></td><td class="cl-30ef7da9"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">2 (1.0%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db3"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7da9"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">2 (0.7%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-30ef7da8"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">Other</span></p></td><td class="cl-30ef7da9"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">2 (1.0%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db3"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7da9"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">2 (0.7%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-30ef7dbc"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">Okanogan</span></p></td><td class="cl-30ef7dbd"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">2 (1.0%)</span></p></td><td class="cl-30ef7dc6"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">1 (2.1%)</span></p></td><td class="cl-30ef7dc6"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7dc6"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">9 (52.9%)</span></p></td><td class="cl-30ef7dc7"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">1 (50.0%)</span></p></td><td class="cl-30ef7dbd"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">13 (4.5%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-30ef7da8"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">Methow</span></p></td><td class="cl-30ef7da9"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">12 (5.9%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">27 (57.4%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">16 (88.9%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db3"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7da9"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">55 (19.1%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-30ef7da8"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">Foster Creek</span></p></td><td class="cl-30ef7da9"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">12 (5.9%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">4 (8.5%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db3"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7da9"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">16 (5.6%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-30ef7da8"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">Entiat</span></p></td><td class="cl-30ef7da9"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">10 (4.9%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db3"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7da9"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">10 (3.5%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-30ef7da8"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">East Bank Hatchery</span></p></td><td class="cl-30ef7da9"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">11 (5.4%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db2"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7db3"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">0 (0.0%)</span></p></td><td class="cl-30ef7da9"><p class="cl-30ef5d00"><span class="cl-30ebbf4c">11 (3.8%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-30ef7dd0"><p class="cl-30ef5d00"><span class="cl-30ebbf38">Total</span></p></td><td class="cl-30ef7dda"><p class="cl-30ef5d00"><span class="cl-30ebbf38">204 (100.0%)</span></p></td><td class="cl-30ef7ddb"><p class="cl-30ef5d00"><span class="cl-30ebbf38">47 (100.0%)</span></p></td><td class="cl-30ef7ddb"><p class="cl-30ef5d00"><span class="cl-30ebbf38">18 (100.0%)</span></p></td><td class="cl-30ef7ddb"><p class="cl-30ef5d00"><span class="cl-30ebbf38">17 (100.0%)</span></p></td><td class="cl-30ef7de4"><p class="cl-30ef5d00"><span class="cl-30ebbf38">2 (100.0%)</span></p></td><td class="cl-30ef7dda"><p class="cl-30ef5d00"><span class="cl-30ebbf38">288 (100.0%)</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<div class="cell">
+<div id="tbl-wells-site" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-wells-site-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;6: This table shows how many tags (percent) from the two Wells Hatchery safety net broodstocks, detected crossing Rocky Reach dam, had their furthest upstream detection at various locations. Fish identified as being in Wells Pool had their final detection in the fish ladder at Wells Dam. Broodstock codes are as follows: OmyWELL - Wells Hatchery safety net fish released at Wells Dam, OmyWMET - Wells Hatchery safety net fish releaseed in lower Methow. Several areas have been grouped into lower, middle and upper Methow reaches.
+</figcaption>
+<div aria-describedby="tbl-wells-site-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-31558b16{}.cl-314c4e5c{font-family:'Arial';font-size:9pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-314c4e70{font-family:'Arial';font-size:9pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-314c4e7a{font-family:'Arial';font-size:9pt;font-weight:normal;font-style:italic;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-31500132{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-315024aa{width:0.824in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-315024b4{width:2.109in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-315024be{width:0.88in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-315024c8{width:0.762in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-315024c9{width:0.866in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-315024d2{width:0.845in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-315024dc{width:0.824in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-315024e6{width:2.109in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-315024f0{width:0.88in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-315024f1{width:0.762in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-315024fa{width:0.866in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-315024fb{width:0.845in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-31502504{width:0.824in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-3150250e{width:2.109in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-3150250f{width:0.88in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-31502518{width:0.762in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-31502519{width:0.866in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-31502522{width:0.845in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-3150252c{width:0.824in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-3150252d{width:2.109in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-31502536{width:0.88in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-31502540{width:0.762in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-3150254a{width:0.866in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-3150254b{width:0.845in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-31502554{width:0.824in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-31502555{width:2.109in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-3150255e{width:0.88in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-31502568{width:0.762in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-31502572{width:0.866in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-3150257c{width:0.845in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-31558b16"><thead><tr style="overflow-wrap:break-word;"><th class="cl-315024aa"><p class="cl-31500132"><span class="cl-314c4e5c">Watershed</span></p></th><th class="cl-315024b4"><p class="cl-31500132"><span class="cl-314c4e5c">Site Name</span></p></th><th class="cl-315024be"><p class="cl-31500132"><span class="cl-314c4e5c">RKM</span></p></th><th class="cl-315024c8"><p class="cl-31500132"><span class="cl-314c4e5c">Site Code</span></p></th><th class="cl-315024c9"><p class="cl-31500132"><span class="cl-314c4e5c">OmyWELL</span></p></th><th class="cl-315024d2"><p class="cl-31500132"><span class="cl-314c4e5c">OmyWMET</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-315024dc"><p class="cl-31500132"><span class="cl-314c4e70">Wenatchee</span></p></td><td class="cl-315024e6"><p class="cl-31500132"><span class="cl-314c4e70">Lower Wenatchee River</span></p></td><td class="cl-315024f0"><p class="cl-31500132"><span class="cl-314c4e70">754.003</span></p></td><td class="cl-315024f1"><p class="cl-31500132"><span class="cl-314c4e70">LWE</span></p></td><td class="cl-315024fa"><p class="cl-31500132"><span class="cl-314c4e70">1 (0.5%)</span></p></td><td class="cl-315024fb"><p class="cl-31500132"><span class="cl-314c4e70">0 (0%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Wenatchee</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Lower Mission Creek Instream</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">754.017.001</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">MCL</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">3 (1.5%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">0 (0%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Mainstem</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Rocky Reach Fishway</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">763</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">RRF</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">2 (1%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">0 (0%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-3150252c"><p class="cl-31500132"><span class="cl-314c4e70">Mainstem</span></p></td><td class="cl-3150252d"><p class="cl-31500132"><span class="cl-314c4e70">East Bank Hatchery Outfall</span></p></td><td class="cl-31502536"><p class="cl-31500132"><span class="cl-314c4e70">764</span></p></td><td class="cl-31502540"><p class="cl-31500132"><span class="cl-314c4e70">EBO</span></p></td><td class="cl-3150254a"><p class="cl-31500132"><span class="cl-314c4e70">11 (5.4%)</span></p></td><td class="cl-3150254b"><p class="cl-31500132"><span class="cl-314c4e70">0 (0%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Entiat</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Lower Entiat River</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">778.002</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">ENL</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">7 (3.4%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">0 (0%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Entiat</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Upper Entiat River at rkm 17.1</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">778.017</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">ENA</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">2 (1%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">0 (0%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Entiat</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Mad River, Entiat River Basin</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">778.017.001</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">MAD</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">1 (0.5%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">0 (0%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Mainstem</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Wells Dam Hatchery</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">829.001</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">WEH</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">122 (59.8%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">2 (4.3%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Wells Pool</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Wells Dam, DCPUD Adult Ladders</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">830</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">WEA</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">27 (13.2%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">13 (27.7%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Mainstem</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Methow Train Bridge</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">843.001</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">MTB</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">2 (1%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">0 (0%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e7a">Methow</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e7a">Lower Methow</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e7a">843.008</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e7a">-</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e7a">10 (4.9%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e7a">15 (31.9%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Methow</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Lower Methow River at Pateros</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">843.008</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">LMR</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">6 (2.9%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">9 (19.1%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Methow</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Gold Creek, Methow River</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">843.035.001</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">GLC</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">3 (1.5%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">3 (6.4%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e7a">Methow</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e7a">Middle Methow</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e7a">843.045</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e7a">-</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e7a">1 (0.5%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e7a">8 (17%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Methow</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Libby Creek, Methow River</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">843.042.001</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">LBC</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">1 (0.5%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">3 (6.4%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Methow</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Methow River at Carlton</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">843.045</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">MRC</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">0 (0%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">6 (12.8%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Methow</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Beaver Creek, Methow River</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">843.057.001</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">BVC</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">1 (0.5%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">2 (4.3%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Methow</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Lwr Twisp Rvr near MSRF Ponds</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">843.066.002</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">TWR</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">0 (0%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">1 (2.1%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e7a">Methow</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e7a">Upper Methow</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e7a">843.085</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e7a">-</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e7a">1 (0.5%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e7a">3 (6.4%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Methow</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Chewuch River above Winthrop</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">843.080.001</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">CRW</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">0 (0%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">2 (4.3%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Methow</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Spring Creek Acclimation Pond</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">843.081</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">SCP</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">0 (0%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">1 (2.1%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502504"><p class="cl-31500132"><span class="cl-314c4e70">Methow</span></p></td><td class="cl-3150250e"><p class="cl-31500132"><span class="cl-314c4e70">Methow River at Winthrop</span></p></td><td class="cl-3150250f"><p class="cl-31500132"><span class="cl-314c4e70">843.085</span></p></td><td class="cl-31502518"><p class="cl-31500132"><span class="cl-314c4e70">MRW</span></p></td><td class="cl-31502519"><p class="cl-31500132"><span class="cl-314c4e70">1 (0.5%)</span></p></td><td class="cl-31502522"><p class="cl-31500132"><span class="cl-314c4e70">0 (0%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-3150252c"><p class="cl-31500132"><span class="cl-314c4e70">Okanogan</span></p></td><td class="cl-3150252d"><p class="cl-31500132"><span class="cl-314c4e70">Lower Okanogan Instream Array</span></p></td><td class="cl-31502536"><p class="cl-31500132"><span class="cl-314c4e70">858.025</span></p></td><td class="cl-31502540"><p class="cl-31500132"><span class="cl-314c4e70">OKL</span></p></td><td class="cl-3150254a"><p class="cl-31500132"><span class="cl-314c4e70">1 (0.5%)</span></p></td><td class="cl-3150254b"><p class="cl-31500132"><span class="cl-314c4e70">0 (0%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-3150252c"><p class="cl-31500132"><span class="cl-314c4e70">Okanogan</span></p></td><td class="cl-3150252d"><p class="cl-31500132"><span class="cl-314c4e70">Loup Loup Creek Instream Array</span></p></td><td class="cl-31502536"><p class="cl-31500132"><span class="cl-314c4e70">858.028.001</span></p></td><td class="cl-31502540"><p class="cl-31500132"><span class="cl-314c4e70">LLC</span></p></td><td class="cl-3150254a"><p class="cl-31500132"><span class="cl-314c4e70">1 (0.5%)</span></p></td><td class="cl-3150254b"><p class="cl-31500132"><span class="cl-314c4e70">0 (0%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-3150252c"><p class="cl-31500132"><span class="cl-314c4e70">Okanogan</span></p></td><td class="cl-3150252d"><p class="cl-31500132"><span class="cl-314c4e70">Bonaparte Creek Instream Array</span></p></td><td class="cl-31502536"><p class="cl-31500132"><span class="cl-314c4e70">858.092.001</span></p></td><td class="cl-31502540"><p class="cl-31500132"><span class="cl-314c4e70">BPC</span></p></td><td class="cl-3150254a"><p class="cl-31500132"><span class="cl-314c4e70">0 (0%)</span></p></td><td class="cl-3150254b"><p class="cl-31500132"><span class="cl-314c4e70">1 (2.1%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-3150252c"><p class="cl-31500132"><span class="cl-314c4e70">Okanogan</span></p></td><td class="cl-3150252d"><p class="cl-31500132"><span class="cl-314c4e70">Foster Creek</span></p></td><td class="cl-31502536"><p class="cl-31500132"><span class="cl-314c4e70">868.001</span></p></td><td class="cl-31502540"><p class="cl-31500132"><span class="cl-314c4e70">FST</span></p></td><td class="cl-3150254a"><p class="cl-31500132"><span class="cl-314c4e70">12 (5.9%)</span></p></td><td class="cl-3150254b"><p class="cl-31500132"><span class="cl-314c4e70">4 (8.5%)</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-31502554"><p class="cl-31500132"><span class="cl-314c4e5c">-</span></p></td><td class="cl-31502555"><p class="cl-31500132"><span class="cl-314c4e5c">Total</span></p></td><td class="cl-3150255e"><p class="cl-31500132"><span class="cl-314c4e5c">-</span></p></td><td class="cl-31502568"><p class="cl-31500132"><span class="cl-314c4e5c">-</span></p></td><td class="cl-31502572"><p class="cl-31500132"><span class="cl-314c4e5c">204 (100%)</span></p></td><td class="cl-3150257c"><p class="cl-31500132"><span class="cl-314c4e5c">47 (100%)</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="east-bank-hatchery-fish" class="level2">
+<h2 class="anchored" data-anchor-id="east-bank-hatchery-fish">East Bank Hatchery Fish</h2>
+<p>Of the 40 fish identified at Priest Rapids as coming from East Bank Hatchery broodstock, 39 were detected passing Rock Island Dam. <a href="#tbl-eb-fate" class="quarto-xref">Table&nbsp;7</a> shows where their final detection occurred.</p>
+<div class="cell">
+<div id="tbl-eb-fate" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-eb-fate-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;7: This table shows how many tags from East Bank Hatchery broodstock, detected crossing Rock Island dam, had their last detection in certain locations. Fish identified as being in Wells Pool had their final detection in the fish ladder at Wells Dam.
+</figcaption>
+<div aria-describedby="tbl-eb-fate-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-318edae2{}.cl-3186beca{font-family:'Arial';font-size:10pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-3186bede{font-family:'Arial';font-size:10pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-318a26be{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-318a26d2{margin:0;text-align:right;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-318a4018{width:1.513in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-318a4022{width:0.71in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-318a402c{width:0.795in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-318a402d{width:1.513in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-318a4036{width:0.71in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-318a4040{width:0.795in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-318a4054{width:1.513in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-318a4055{width:0.71in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-318a405e{width:0.795in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-318a405f{width:1.513in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-318a4060{width:0.71in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-318a4068{width:0.795in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-318a4072{width:1.513in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-318a407c{width:0.71in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-318a407d{width:0.795in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-318edae2"><thead><tr style="overflow-wrap:break-word;"><th class="cl-318a4018"><p class="cl-318a26be"><span class="cl-3186beca">Final Detection</span></p></th><th class="cl-318a4022"><p class="cl-318a26d2"><span class="cl-3186beca">N tags</span></p></th><th class="cl-318a402c"><p class="cl-318a26be"><span class="cl-3186beca">Percent</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-318a402d"><p class="cl-318a26be"><span class="cl-3186bede">Wenatchee</span></p></td><td class="cl-318a4036"><p class="cl-318a26d2"><span class="cl-3186bede">29</span></p></td><td class="cl-318a4040"><p class="cl-318a26be"><span class="cl-3186bede">74.4%</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-318a4054"><p class="cl-318a26be"><span class="cl-3186bede">Wells Pool</span></p></td><td class="cl-318a4055"><p class="cl-318a26d2"><span class="cl-3186bede">7</span></p></td><td class="cl-318a405e"><p class="cl-318a26be"><span class="cl-3186bede">17.9%</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-318a405f"><p class="cl-318a26be"><span class="cl-3186bede">East Bank Hatchery</span></p></td><td class="cl-318a4060"><p class="cl-318a26d2"><span class="cl-3186bede">2</span></p></td><td class="cl-318a4068"><p class="cl-318a26be"><span class="cl-3186bede">5.1%</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-318a4054"><p class="cl-318a26be"><span class="cl-3186bede">Rock Island Dam</span></p></td><td class="cl-318a4055"><p class="cl-318a26d2"><span class="cl-3186bede">1</span></p></td><td class="cl-318a405e"><p class="cl-318a26be"><span class="cl-3186bede">2.6%</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-318a4072"><p class="cl-318a26be"><span class="cl-3186beca">Total</span></p></td><td class="cl-318a407c"><p class="cl-318a26d2"><span class="cl-3186beca">39</span></p></td><td class="cl-318a407d"><p class="cl-318a26be"><span class="cl-3186beca">100.0%</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+</section>
+<section id="references" class="level1 unnumbered">
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-Waterhouse2020" class="csl-entry" role="listitem">
+Waterhouse, L., J. White, K. See, A. Murdoch, and B. X. Semmens. 2020. <a href="https://doi.org/10.1002/eap.2202">A <span>Bayesian</span> nested patch occupancy model to estimate steelhead movement and abundance</a>. Ecological Applications 30(8).
+</div>
+</div></section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
