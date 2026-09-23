@@ -38,7 +38,7 @@ yr = 2026
 # what dam count to use?
 dam_cnt_name = c("PriestRapids",
                  "RockIsland",
-                 "RockyReach")[2]
+                 "RockyReach")[1]
 
 #-----------------------------------------------------------------
 # run for set of years
@@ -89,6 +89,7 @@ dam_cnt_name = c("PriestRapids",
                                node %in% c("CLK") ~ "Wenatchee",
                              str_detect(path, "ENL") ~ "Entiat",
                              str_detect(path, "LMR") ~ "Methow",
+                             str_detect(path, "MTB") ~ "Methow",
                              str_detect(path, "OKL") |
                                node %in% c("FST") ~ "Okanogan",
                              str_detect(path, "RIA", negate = T) &
@@ -446,7 +447,8 @@ for(yr in 2011:2023) {
 
   cat(paste("Summarizing year", yr, "\n\n"))
 
-  if(yr %in% c(2011:2015, 2018)) {
+  if(yr %in% c(2011:2015, 2018) |
+     yr >= 2026) {
     dam_cnt_name = "PriestRapids"
   } else {
     dam_cnt_name = "RockIsland"

@@ -894,6 +894,15 @@ gen_df <-
                             .default = .))) |>
   select(-any_of(paste0("probability_", c(18:24)))) |>
   mutate(spawn_year = sample_year + 1) |>
+  # identify fish that did genotype for sex, but not for gsi / pbt
+  mutate(sex_genotyped = case_when(assignment_method %in% c("GSI", "PBT") ~ T,
+                                   assignment_method == "failed" &
+                                     genetic_sex != "Unknown" ~ T,
+                                   assignment_method == "duplicate" &
+                                     genetic_sex != "Unknown" ~ T,
+                                   assignment_method == "failed" &
+                                     genetic_sex == "Unknown" ~ F,
+                                   .default = NA)) |>
   # drop any row with no PIT tag number
   filter(!is.na(pit_tag)) |>
   # flip any PIT tag that's marked as the "secondary" PIT tag in the bio data
@@ -1175,7 +1184,8 @@ bio_final_df <-
                      hatchery_by,
                      hatchery_byname,
                      gsi_assignment = observed_gsi_assignment,
-                     gsi_prob = probability_gsi_1) |>
+                     gsi_prob = probability_gsi_1,
+                     sex_genotyped) |>
               distinct(),
             by = join_by(spawn_year,
                          pit_tag))
